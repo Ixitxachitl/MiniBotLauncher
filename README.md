@@ -4,7 +4,7 @@ MiniBotLauncher is a lightweight, C#/.NET 8 Windows Forms application that conne
 
 - **AskAI**: Ask AI natural language questions
 - **Weather**: Get real-time weather info
-- **Translate**: Translate English sentences into Spanish
+- **Translate**: Automatically Translate Non-English into English
 - **ButtsBot**: Replace words with "butt" or "butts" randomly for comedic effect
 - **ClapThatBot**: Generate funny "I'd clap that" responses
 - **MarkovChain**: Build a chat-based Markov brain and generate random sentences
