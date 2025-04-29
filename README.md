@@ -77,7 +77,7 @@ Optional:
 |:---|:---|
 | AskAI | Answers natural language questions. Requires a local GPT4All server running the `llama3-8b-instruct` model. |
 | Weather | Provides real-time weather based on city name. |
-| Translate | Translates sentences from English to Spanish. |
+| Translate | Automatically Translates Non-English into English. |
 | ButtsBot | Replaces random words with "butt"/"butts" in chat. |
 | ClapThatBot | Fun "I'd clap that" joke generation. |
 | MarkovChain | Learns from chat and generates fun random sentences every 35 messages. |
