@@ -1,6 +1,4 @@
-﻿// Full and complete MainForm.cs
-
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Net;
@@ -180,67 +178,106 @@ public partial class MainForm : Form
             Log($"Error launching OAuth page: {ex.Message}");
         }
 
+        if (oauthListener != null)
+        {
+            oauthListener.Stop();
+            oauthListener.Close();
+        }
+
         oauthListener = new HttpListener();
-        oauthListener.Prefixes.Add("http://localhost:8750/callback/");
+        oauthListener.Prefixes.Add("http://localhost:8750/");
         oauthListener.Start();
         Log("Listening for OAuth callback...");
 
+        // Start first listener
         oauthListener.BeginGetContext(OnOAuthCallback, null);
     }
 
     private void OnOAuthCallback(IAsyncResult result)
     {
-        HttpListenerContext context = null;
-    
         try
         {
-            context = oauthListener.EndGetContext(result);
-    
-            string responseHtml = "<html><body><h1>You can close this window now!</h1></body></html>";
-            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseHtml);
-            context.Response.ContentLength64 = buffer.Length;
-            context.Response.OutputStream.Write(buffer, 0, buffer.Length);
-            context.Response.OutputStream.Close();
-    
-            string rawUrl = context.Request.RawUrl;
-            Log($"OAuth callback URL: {rawUrl}");
-    
-            if (rawUrl.Contains("#access_token="))
+            var context = oauthListener.EndGetContext(result);
+
+            if (context.Request.Url.AbsolutePath == "/callback/")
             {
-                string tokenPart = rawUrl.Split('#')[1];
-                string[] pairs = tokenPart.Split('&');
-                foreach (string pair in pairs)
+                Log("Serving OAuth HTML page...");
+
+                string responseHtml = @"
+                <html><body>
+                <script>
+                const hash = window.location.hash.substr(1);
+                const params = new URLSearchParams(hash);
+                const token = params.get('access_token');
+                if (token) {
+                    fetch('/token/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'access_token=' + encodeURIComponent(token)
+                    }).then(() => {
+                        document.body.innerHTML = '<h1>Token received! You can close this window.</h1>';
+                    });
+                } else {
+                    document.body.innerHTML = '<h1>Error: No access token found.</h1>';
+                }
+                </script>
+                </body></html>";
+
+                byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseHtml);
+                context.Response.ContentLength64 = buffer.Length;
+                context.Response.ContentType = "text/html";
+                context.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                context.Response.OutputStream.Close();
+
+                // 🟰 Keep listening for the POST
+                oauthListener.BeginGetContext(OnOAuthCallback, null);
+            }
+            else if (context.Request.Url.AbsolutePath == "/token/")
+            {
+                Log("Receiving OAuth token POST...");
+
+                using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
                 {
-                    var parts = pair.Split('=');
-                    if (parts[0] == "access_token")
+                    string body = reader.ReadToEnd();
+                    var parsed = System.Web.HttpUtility.ParseQueryString(body);
+                    string token = parsed["access_token"];
+
+                    if (!string.IsNullOrWhiteSpace(token))
                     {
-                        string token = parts[1];
                         Invoke(new Action(() => txtOAuthToken.Text = token));
-                        Log("OAuth token captured successfully.");
-                        break;
+                        Log("OAuth token captured successfully!");
+                    }
+                    else
+                    {
+                        Log("No access token found in POST body.");
                     }
                 }
+
+                context.Response.StatusCode = 200;
+                context.Response.Close();
+
+                // 🛑 After we got the token, STOP listening
+                oauthListener.Stop();
+                oauthListener.Close();
+                oauthListener = null;
             }
             else
             {
-                Log("OAuth token not found in the callback.");
+                context.Response.StatusCode = 404;
+                context.Response.Close();
+
+                // 🟰 Keep listening just in case more weird requests
+                oauthListener.BeginGetContext(OnOAuthCallback, null);
             }
         }
         catch (Exception ex)
         {
             Log($"OAuth callback error: {ex.Message}");
         }
-        finally
-        {
-            if (oauthListener != null && oauthListener.IsListening)
-            {
-                oauthListener.Stop();
-            }
-            oauthListener.Close();
-            oauthListener = null;
-        }
     }
-    
+
+
+
     private void ConnectToTwitch()
     {
         if (!IsBasicAuthValid())
