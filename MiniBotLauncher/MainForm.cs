@@ -9,6 +9,7 @@ using TwitchLib.Client;
 using TwitchLib.Client.Models;
 using TwitchLib.Client.Events;
 using TwitchLib.Communication.Events;
+using System.Reflection;
 
 public partial class MainForm : Form
 {
@@ -38,6 +39,11 @@ public partial class MainForm : Form
     public MainForm()
     {
         InitializeComponent();
+        using (var stream = Assembly.GetExecutingAssembly()
+            .GetManifestResourceStream("MiniBotLauncher.MiniBotLauncher.ico"))
+        {
+            this.Icon = new Icon(stream);
+        }
         LoadSettings();
         UpdateToggleStates();
         this.FormClosing += MainForm_FormClosing;
