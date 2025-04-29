@@ -51,72 +51,197 @@ public partial class MainForm : Form
     private void InitializeComponent()
     {
         this.Text = "MiniBotLauncher";
-        this.Size = new Size(500, 650);
+        this.Size = new Size(700, 800);
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MaximizeBox = false;
+        this.BackColor = Color.FromArgb(30, 30, 30);
+        this.Font = new Font("Segoe UI", 10F);
 
-        Label lblBotUsername = new Label() { Text = "Bot Username", Left = 20, Top = 20, Width = 120 };
-        txtBotUsername = new TextBox() { Left = 150, Top = 20, Width = 300 };
+        Color foreColor = Color.White;
+        Color buttonColor = Color.FromArgb(50, 50, 50);
+        Color activeButtonColor = Color.FromArgb(70, 70, 70);
+        Color toggleActiveColor = Color.FromArgb(0, 122, 204);
+        Color toggleHoverColor = Color.FromArgb(0, 102, 204);
+
+        int marginLeft = 30;
+        int marginRight = 660;
+        int inputLeft = 200;
+        int currentTop = 30;
+        int spacing = 45;
+        int toggleWidth = 310;
+
+        Label CreateLabel(string text)
+        {
+            var label = new Label
+            {
+                Text = text,
+                Left = marginLeft,
+                Top = currentTop,
+                Width = 150,
+                ForeColor = foreColor,
+                BackColor = Color.Transparent
+            };
+            currentTop += spacing;
+            return label;
+        }
+
+        TextBox CreateTextBox(bool passwordChar = false)
+        {
+            var textbox = new TextBox
+            {
+                Left = inputLeft,
+                Top = currentTop - spacing,
+                Width = 460,
+                BackColor = Color.FromArgb(50, 50, 50),
+                ForeColor = foreColor,
+                BorderStyle = BorderStyle.FixedSingle,
+                UseSystemPasswordChar = passwordChar
+            };
+            return textbox;
+        }
+
+        Button CreateButton(string text)
+        {
+            var button = new Button
+            {
+                Text = text,
+                Left = inputLeft,
+                Top = currentTop,
+                Width = 200,
+                Height = 40,
+                BackColor = buttonColor,
+                ForeColor = foreColor,
+                FlatStyle = FlatStyle.Flat
+            };
+            button.FlatAppearance.BorderSize = 0;
+            button.FlatAppearance.MouseOverBackColor = activeButtonColor;
+            button.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, button.Width, button.Height, 10, 10));
+            return button;
+        }
+
+        CheckBox CreateToggle(string text, int left)
+        {
+            var toggle = new CheckBox
+            {
+                Text = text,
+                Left = left,
+                Top = currentTop,
+                Width = toggleWidth,
+                Height = 40,
+                Appearance = Appearance.Button,
+                TextAlign = ContentAlignment.MiddleCenter,
+                BackColor = buttonColor,
+                ForeColor = foreColor,
+                FlatStyle = FlatStyle.Flat,
+                Enabled = false
+            };
+            toggle.FlatAppearance.BorderSize = 0;
+            toggle.CheckedChanged += (s, e) =>
+            {
+                toggle.BackColor = toggle.Checked ? toggleActiveColor : buttonColor;
+            };
+            toggle.MouseEnter += (s, e) =>
+            {
+                if (!toggle.Checked) toggle.BackColor = toggleHoverColor;
+            };
+            toggle.MouseLeave += (s, e) =>
+            {
+                if (!toggle.Checked) toggle.BackColor = buttonColor;
+            };
+            toggle.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, toggle.Width, toggle.Height, 10, 10));
+            return toggle;
+        }
+
+        Label lblBotUsername = CreateLabel("Bot Username");
+        txtBotUsername = CreateTextBox();
         txtBotUsername.TextChanged += TextFields_TextChanged;
 
-        Label lblClientID = new Label() { Text = "Client ID", Left = 20, Top = 60, Width = 120 };
-        txtClientID = new TextBox() { Left = 150, Top = 60, Width = 300 };
+        Label lblClientID = CreateLabel("Client ID");
+        txtClientID = CreateTextBox();
         txtClientID.TextChanged += TextFields_TextChanged;
 
-        Label lblOAuthToken = new Label() { Text = "OAuth Token", Left = 20, Top = 100, Width = 120 };
-        txtOAuthToken = new TextBox() { Left = 150, Top = 100, Width = 300, ReadOnly = true, UseSystemPasswordChar = true };
+        Label lblOAuthToken = CreateLabel("OAuth Token");
+        txtOAuthToken = CreateTextBox(true);
         txtOAuthToken.TextChanged += TextFields_TextChanged;
 
-        btnGetToken = new Button() { Text = "Get Token", Left = 260, Top = 140, Width = 90 };
+        btnGetToken = CreateButton("Get Token");
+        btnGetToken.Top = currentTop;
         btnGetToken.Click += btnGetToken_Click;
 
-        btnConnect = new Button() { Text = "Connect", Left = 360, Top = 140, Width = 90 };
+        btnConnect = CreateButton("Connect");
+        btnConnect.Left = marginRight - 200;
+        btnConnect.Top = currentTop;
         btnConnect.Click += btnConnect_Click;
 
-        Label lblChannel = new Label() { Text = "Channel to Join", Left = 20, Top = 180, Width = 120 };
-        txtChannelName = new TextBox() { Left = 150, Top = 180, Width = 300 };
+        currentTop += 60;
+
+        Label lblChannel = CreateLabel("Channel to Join");
+        txtChannelName = CreateTextBox();
         txtChannelName.TextChanged += TextFields_TextChanged;
 
-        Label lblNLPKey = new Label() { Text = "NLP Cloud API Key", Left = 20, Top = 220, Width = 140 };
-        txtNLPApiKey = new TextBox() { Left = 150, Top = 220, Width = 300 };
+        Label lblNLPKey = CreateLabel("NLP API Key");
+        txtNLPApiKey = CreateTextBox();
         txtNLPApiKey.TextChanged += TextFields_TextChanged;
 
-        Label lblScripts = new Label() { Text = "Toggle Scripts:", Left = 20, Top = 270, Width = 120 };
+        currentTop += 15;
+        Label lblScripts = CreateLabel("Toggle Scripts");
 
-        toggleAskAI = CreateToggle("AskAI", 150, 270);
-        toggleWeather = CreateToggle("Weather", 300, 270);
-        toggleTranslate = CreateToggle("Translate", 150, 310);
-        toggleButtsbot = CreateToggle("Buttsbot", 300, 310);
-        toggleClapThat = CreateToggle("ClapThat", 150, 350);
-        toggleMarkovChain = CreateToggle("MarkovChain", 300, 350);
+        toggleAskAI = CreateToggle("AskAI", marginLeft);
+        toggleWeather = CreateToggle("Weather", marginLeft + toggleWidth);
+        currentTop += 50;
+        toggleTranslate = CreateToggle("Translate", marginLeft);
+        toggleButtsbot = CreateToggle("Buttsbot", marginLeft + toggleWidth);
+        currentTop += 50;
+        toggleClapThat = CreateToggle("ClapThat", marginLeft);
+        toggleMarkovChain = CreateToggle("MarkovChain", marginLeft + toggleWidth);
 
-        txtStatusLog = new TextBox() { Left = 20, Top = 400, Width = 430, Height = 150, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical };
-        lblConnectionStatus = new Label() { Text = "Disconnected", Left = 20, Top = 570, Width = 300, ForeColor = Color.Red };
+        currentTop += 70;
+        txtStatusLog = new TextBox
+        {
+            Left = marginLeft,
+            Top = currentTop,
+            Width = 620,
+            Height = 120,
+            Multiline = true,
+            ReadOnly = true,
+            ScrollBars = ScrollBars.Vertical,
+            BackColor = Color.FromArgb(40, 40, 40),
+            ForeColor = foreColor,
+            BorderStyle = BorderStyle.FixedSingle
+        };
 
-        Controls.Add(lblBotUsername);
-        Controls.Add(txtBotUsername);
-        Controls.Add(lblClientID);
-        Controls.Add(txtClientID);
-        Controls.Add(lblOAuthToken);
-        Controls.Add(txtOAuthToken);
-        Controls.Add(btnGetToken);
-        Controls.Add(btnConnect);
-        Controls.Add(lblChannel);
-        Controls.Add(txtChannelName);
-        Controls.Add(lblNLPKey);
-        Controls.Add(txtNLPApiKey);
-        Controls.Add(lblScripts);
-        Controls.Add(toggleAskAI);
-        Controls.Add(toggleWeather);
-        Controls.Add(toggleTranslate);
-        Controls.Add(toggleButtsbot);
-        Controls.Add(toggleClapThat);
-        Controls.Add(toggleMarkovChain);
-        Controls.Add(txtStatusLog);
-        Controls.Add(lblConnectionStatus);
+        currentTop += 140;
+        lblConnectionStatus = new Label
+        {
+            Text = "Disconnected",
+            Left = marginLeft,
+            Top = currentTop,
+            Width = 620,
+            ForeColor = Color.Red,
+            BackColor = Color.Transparent,
+            TextAlign = ContentAlignment.MiddleCenter
+        };
+
+        Controls.AddRange(new Control[]
+        {
+        lblBotUsername, txtBotUsername,
+        lblClientID, txtClientID,
+        lblOAuthToken, txtOAuthToken,
+        btnGetToken, btnConnect,
+        lblChannel, txtChannelName,
+        lblNLPKey, txtNLPApiKey,
+        lblScripts,
+        toggleAskAI, toggleWeather,
+        toggleTranslate, toggleButtsbot,
+        toggleClapThat, toggleMarkovChain,
+        txtStatusLog, lblConnectionStatus
+        });
 
         DisableAllToggles();
     }
+
+    [System.Runtime.InteropServices.DllImport("gdi32.dll", SetLastError = true)]
+    private static extern IntPtr CreateRoundRectRgn(int nLeftRect, int nTopRect, int nRightRect, int nBottomRect, int nWidthEllipse, int nHeightEllipse);
 
     private CheckBox CreateToggle(string text, int left, int top)
     {
