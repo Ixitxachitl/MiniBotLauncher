@@ -362,9 +362,22 @@ public partial class MainForm : Form
             ClapThatEnabled = toggleClapThat.Checked,
             MarkovChainEnabled = toggleMarkovChain.Checked
         };
-
-        string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(SettingsFile, json);
+    
+        try
+        {
+            string directory = Path.GetDirectoryName(SettingsFile);
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+    
+            string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(SettingsFile, json);
+        }
+        catch (Exception ex)
+        {
+            Log($"Failed to save settings: {ex.Message}");
+        }
     }
 
     private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
