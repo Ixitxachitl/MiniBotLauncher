@@ -51,7 +51,7 @@ public partial class MainForm : Form
     private void InitializeComponent()
     {
         this.Text = "MiniBotLauncher";
-        this.Size = new Size(700, 800);
+        this.Size = new Size(500, 670);
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MaximizeBox = false;
         this.BackColor = Color.FromArgb(30, 30, 30);
@@ -61,14 +61,13 @@ public partial class MainForm : Form
         Color buttonColor = Color.FromArgb(50, 50, 50);
         Color activeButtonColor = Color.FromArgb(70, 70, 70);
         Color toggleActiveColor = Color.FromArgb(0, 122, 204);
-        Color toggleHoverColor = Color.FromArgb(0, 102, 204);
 
         int marginLeft = 30;
-        int marginRight = 660;
-        int inputLeft = 200;
+        int toggleGap = 10;
+        int inputLeft = 150;
         int currentTop = 30;
-        int spacing = 45;
-        int toggleWidth = 310;
+        int spacing = 40;
+        int toggleWidth = (500 - marginLeft * 2 - toggleGap) / 2;
 
         Label CreateLabel(string text)
         {
@@ -77,7 +76,7 @@ public partial class MainForm : Form
                 Text = text,
                 Left = marginLeft,
                 Top = currentTop,
-                Width = 150,
+                Width = 120,
                 ForeColor = foreColor,
                 BackColor = Color.Transparent
             };
@@ -91,7 +90,7 @@ public partial class MainForm : Form
             {
                 Left = inputLeft,
                 Top = currentTop - spacing,
-                Width = 460,
+                Width = 320,
                 BackColor = Color.FromArgb(50, 50, 50),
                 ForeColor = foreColor,
                 BorderStyle = BorderStyle.FixedSingle,
@@ -107,7 +106,7 @@ public partial class MainForm : Form
                 Text = text,
                 Left = inputLeft,
                 Top = currentTop,
-                Width = 200,
+                Width = 150,
                 Height = 40,
                 BackColor = buttonColor,
                 ForeColor = foreColor,
@@ -127,27 +126,26 @@ public partial class MainForm : Form
                 Left = left,
                 Top = currentTop,
                 Width = toggleWidth,
-                Height = 40,
+                Height = 36,
                 Appearance = Appearance.Button,
                 TextAlign = ContentAlignment.MiddleCenter,
                 BackColor = buttonColor,
-                ForeColor = foreColor,
+                ForeColor = Color.Gray,
                 FlatStyle = FlatStyle.Flat,
                 Enabled = false
             };
             toggle.FlatAppearance.BorderSize = 0;
+
+            toggle.EnabledChanged += (s, e) =>
+            {
+                toggle.ForeColor = toggle.Enabled ? foreColor : Color.Gray;
+            };
+
             toggle.CheckedChanged += (s, e) =>
             {
                 toggle.BackColor = toggle.Checked ? toggleActiveColor : buttonColor;
             };
-            toggle.MouseEnter += (s, e) =>
-            {
-                if (!toggle.Checked) toggle.BackColor = toggleHoverColor;
-            };
-            toggle.MouseLeave += (s, e) =>
-            {
-                if (!toggle.Checked) toggle.BackColor = buttonColor;
-            };
+
             toggle.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, toggle.Width, toggle.Height, 10, 10));
             return toggle;
         }
@@ -166,14 +164,16 @@ public partial class MainForm : Form
 
         btnGetToken = CreateButton("Get Token");
         btnGetToken.Top = currentTop;
+        btnGetToken.Left = marginLeft + 125; // << place left button at left margin
         btnGetToken.Click += btnGetToken_Click;
 
         btnConnect = CreateButton("Connect");
-        btnConnect.Left = marginRight - 200;
         btnConnect.Top = currentTop;
+        btnConnect.Left = marginLeft + btnGetToken.Width + toggleGap + 125; // << right next to GetToken + a small gap
         btnConnect.Click += btnConnect_Click;
 
-        currentTop += 60;
+
+        currentTop += 55;
 
         Label lblChannel = CreateLabel("Channel to Join");
         txtChannelName = CreateTextBox();
@@ -183,25 +183,25 @@ public partial class MainForm : Form
         txtNLPApiKey = CreateTextBox();
         txtNLPApiKey.TextChanged += TextFields_TextChanged;
 
-        currentTop += 15;
+        currentTop += 10;
         Label lblScripts = CreateLabel("Toggle Scripts");
 
         toggleAskAI = CreateToggle("AskAI", marginLeft);
-        toggleWeather = CreateToggle("Weather", marginLeft + toggleWidth);
-        currentTop += 50;
+        toggleWeather = CreateToggle("Weather", marginLeft + toggleWidth + toggleGap);
+        currentTop += 40;
         toggleTranslate = CreateToggle("Translate", marginLeft);
-        toggleButtsbot = CreateToggle("Buttsbot", marginLeft + toggleWidth);
-        currentTop += 50;
+        toggleButtsbot = CreateToggle("Buttsbot", marginLeft + toggleWidth + toggleGap);
+        currentTop += 40;
         toggleClapThat = CreateToggle("ClapThat", marginLeft);
-        toggleMarkovChain = CreateToggle("MarkovChain", marginLeft + toggleWidth);
+        toggleMarkovChain = CreateToggle("MarkovChain", marginLeft + toggleWidth + toggleGap);
 
-        currentTop += 70;
+        currentTop += 55;
         txtStatusLog = new TextBox
         {
             Left = marginLeft,
             Top = currentTop,
-            Width = 620,
-            Height = 120,
+            Width = 440,
+            Height = 100,
             Multiline = true,
             ReadOnly = true,
             ScrollBars = ScrollBars.Vertical,
@@ -210,13 +210,14 @@ public partial class MainForm : Form
             BorderStyle = BorderStyle.FixedSingle
         };
 
-        currentTop += 140;
+        currentTop += 110;
         lblConnectionStatus = new Label
         {
             Text = "Disconnected",
             Left = marginLeft,
             Top = currentTop,
-            Width = 620,
+            Width = 440,
+            Height = 30,
             ForeColor = Color.Red,
             BackColor = Color.Transparent,
             TextAlign = ContentAlignment.MiddleCenter
