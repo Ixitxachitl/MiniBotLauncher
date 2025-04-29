@@ -36,6 +36,14 @@ public partial class MainForm : Form
     );
     private bool isDisconnecting = false;
 
+    // Stored event handlers for clean unsubscription
+    private EventHandler<OnConnectedArgs> onConnected;
+    private EventHandler<OnDisconnectedEventArgs> onDisconnected;
+    private EventHandler<OnConnectionErrorArgs> onConnectionError;
+    private EventHandler<OnErrorEventArgs> onError;
+    private EventHandler<OnLogArgs> onLog;
+    private EventHandler<OnMessageReceivedArgs> onMessageReceived;
+
     public MainForm()
     {
         InitializeComponent();
@@ -269,20 +277,22 @@ public partial class MainForm : Form
         toggle.CheckedChanged += toggleScript_CheckedChanged;
         return toggle;
     }
-
     private void btnConnect_Click(object sender, EventArgs e)
     {
         if (client != null && client.IsConnected)
         {
             Log("Disconnecting from Twitch...");
             isDisconnecting = true;
-            client.Disconnect();
+            CleanupClient();
+            // Trigger UI update after disconnect
+            Client_OnDisconnected(this, null); // optional fallback
         }
-        else if (!isDisconnecting) // ⬅ Only allow reconnect if not still cleaning up
+        else if (!isDisconnecting)
         {
             ConnectToTwitch();
         }
     }
+
 
     private void btnGetToken_Click(object sender, EventArgs e) => StartOAuthFlow(txtClientID.Text);
     private HttpListener oauthListener;
@@ -407,9 +417,6 @@ public partial class MainForm : Form
             Log($"OAuth callback error: {ex.Message}");
         }
     }
-
-
-
     private void ConnectToTwitch()
     {
         if (!IsBasicAuthValid())
@@ -418,28 +425,81 @@ public partial class MainForm : Form
             return;
         }
 
-        if (client != null && client.IsConnected)
-            client.Disconnect();
+        CleanupClient();
 
         client = new TwitchClient();
         client.AutoReListenOnException = false;
 
         string finalOAuth = txtOAuthToken.Text.StartsWith("oauth:") ? txtOAuthToken.Text : "oauth:" + txtOAuthToken.Text;
-
         ConnectionCredentials credentials = new ConnectionCredentials(txtBotUsername.Text, finalOAuth);
         client.Initialize(credentials, txtChannelName.Text);
 
-        client.OnConnected += Client_OnConnected;
-        client.OnDisconnected += Client_OnDisconnected;
-        client.OnConnectionError += (s, e) => Log($"Connection error: {e.Error.Message}");
-        client.OnError += (s, e) => Log($"Client error: {e.Exception.Message}");
-        client.OnLog += (s, e) => Log(e.Data);
-        client.OnMessageReceived += Client_OnMessageReceived;
+        // Register handlers
+        onConnected = Client_OnConnected;
+        onDisconnected = Client_OnDisconnected;
+        onConnectionError = (s, e) => Log($"Connection error: {e.Error.Message}");
+        onError = (s, e) => Log($"Client error: {e.Exception.Message}");
+        onLog = (s, e) => Log(e.Data);
+        onMessageReceived = Client_OnMessageReceived;
+
+        client.OnConnected += onConnected;
+        client.OnDisconnected += onDisconnected;
+        client.OnConnectionError += onConnectionError;
+        client.OnError += onError;
+        client.OnLog += onLog;
+        client.OnMessageReceived += onMessageReceived;
 
         Log("Connecting to Twitch IRC server at wss://irc-ws.chat.twitch.tv:443");
         client.Connect();
         Log("Attempting to connect to Twitch...");
     }
+
+    private void RegisterClientEvents()
+    {
+        onConnected = Client_OnConnected;
+        onDisconnected = Client_OnDisconnected;
+        onConnectionError = (s, e) => Log($"Connection error: {e.Error.Message}");
+        onError = (s, e) => Log($"Client error: {e.Exception.Message}");
+        onLog = (s, e) => Log(e.Data);
+        onMessageReceived = Client_OnMessageReceived;
+
+        client.OnConnected += onConnected;
+        client.OnDisconnected += onDisconnected;
+        client.OnConnectionError += onConnectionError;
+        client.OnError += onError;
+        client.OnLog += onLog;
+        client.OnMessageReceived += onMessageReceived;
+    }
+
+    private void CleanupClient()
+    {
+        if (client == null)
+            return;
+
+        try
+        {
+            client.OnConnected -= onConnected;
+            client.OnDisconnected -= onDisconnected;
+            client.OnConnectionError -= onConnectionError;
+            client.OnError -= onError;
+            client.OnLog -= onLog;
+            client.OnMessageReceived -= onMessageReceived;
+
+            if (client.IsConnected)
+            {
+                client.Disconnect();
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"Error during cleanup: {ex.Message}");
+        }
+        finally
+        {
+            client = null;
+        }
+    }
+
 
     private void Client_OnConnected(object sender, OnConnectedArgs e)
     {
@@ -552,8 +612,7 @@ public partial class MainForm : Form
     private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
     {
         SaveSettings();
-        if (client != null && client.IsConnected)
-            client.Disconnect();
+        CleanupClient();
     }
 
     private void DisableAllToggles()
