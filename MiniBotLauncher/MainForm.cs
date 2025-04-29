@@ -190,20 +190,21 @@ public partial class MainForm : Form
 
     private void OnOAuthCallback(IAsyncResult result)
     {
+        HttpListenerContext context = null;
+    
         try
         {
-            var context = oauthListener.EndGetContext(result);
-            oauthListener.Stop();
-
+            context = oauthListener.EndGetContext(result);
+    
             string responseHtml = "<html><body><h1>You can close this window now!</h1></body></html>";
             byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseHtml);
             context.Response.ContentLength64 = buffer.Length;
             context.Response.OutputStream.Write(buffer, 0, buffer.Length);
             context.Response.OutputStream.Close();
-
+    
             string rawUrl = context.Request.RawUrl;
             Log($"OAuth callback URL: {rawUrl}");
-
+    
             if (rawUrl.Contains("#access_token="))
             {
                 string tokenPart = rawUrl.Split('#')[1];
@@ -229,7 +230,17 @@ public partial class MainForm : Form
         {
             Log($"OAuth callback error: {ex.Message}");
         }
+        finally
+        {
+            if (oauthListener != null && oauthListener.IsListening)
+            {
+                oauthListener.Stop();
+            }
+            oauthListener.Close();
+            oauthListener = null;
+        }
     }
+    
     private void ConnectToTwitch()
     {
         if (!IsBasicAuthValid())
