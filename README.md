@@ -97,6 +97,7 @@ Optional:
 ## 📄 License
 
 MIT License. Free for any personal or commercial use.
+
 OpenNLP is used for offline part-of-speech tagging and is licensed under the Apache License 2.0.
 See `/Resources/Models/LICENSE-OpenNLP.txt` for details.
 
