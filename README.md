@@ -29,8 +29,8 @@ MiniBotLauncher is a lightweight, C#/.NET 8 Windows Forms application that conne
 - Twitch account
 
 Optional:
-- NLPCloud API Key (for ButtsBot and ClapThatBot functionality)
-- Local GPT4All server running with the correct model (`llama3-8b-instruct` required for AskAI script)
+- Local GPT4All server running with the correct model (`llama3-8b-instruct`) for AskAI
+- **No longer requires NLPCloud API** — ButtsBot and ClapThatBot now use an embedded, offline POS tagger model (OpenNLP)
 
 ---
 
@@ -67,7 +67,8 @@ Optional:
 6. **Toggle on the scripts you want active**.
 
 > **Important:**
-> - To use the AskAI script, you must run a **local GPT4All server** with the `llama3-8b-instruct` model loaded and accessible.
+> - AskAI requires a **local GPT4All server** running with the `llama3-8b-instruct` model.
+> - ButtsBot and ClapThatBot work offline now using OpenNLP model embedded in the EXE.
 
 ---
 
@@ -78,8 +79,8 @@ Optional:
 | AskAI | Answers natural language questions. Requires a local GPT4All server running the `llama3-8b-instruct` model. |
 | Weather | Provides real-time weather based on city name. |
 | Translate | Automatically Translates Non-English into English. |
-| ButtsBot | Replaces random words with "butt"/"butts" in chat. |
-| ClapThatBot | Fun "I'd clap that" joke generation. |
+| ButtsBot | Replaces random words with "butt"/"butts" in chat using local POS tagging. |
+| ClapThatBot | Fun "I'd clap that" joke generation using local POS tagging. |
 | MarkovChain | Learns from chat and generates fun random sentences every 35 messages. |
 
 ---
@@ -103,6 +104,7 @@ MIT License. Free for any personal or commercial use.
 
 - TwitchLib (chat connection)
 - Newtonsoft.Json (settings and Markov brain)
-- NLPCloud.io (optional natural language processing)
+- OpenNLP (offline POS tagging)
 - GPT4All (local AI serving for AskAI)
 - Built by **Ixitxachitl**
+
