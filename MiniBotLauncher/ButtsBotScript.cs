@@ -1,20 +1,22 @@
 ﻿using System;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using OpenNLP.Tools.PosTagger;
+using OpenNLP.Tools.Tokenize;
 
 public static class ButtsBotScript
 {
-    private static readonly HttpClient client = new HttpClient();
     private static readonly Random rng = new Random();
 
     public static Func<string, Task> DebugLog = null;
 
-    public static async Task<string> Process(string message, string nlpApiKey, string username, string botUsername)
+    public static async Task<string> Process(string message, string username, string botUsername)
     {
-        if (string.IsNullOrWhiteSpace(message) || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(nlpApiKey))
+        if (string.IsNullOrWhiteSpace(message) || string.IsNullOrWhiteSpace(username))
             return null;
 
         if (message.StartsWith("!", StringComparison.Ordinal))
@@ -30,11 +32,11 @@ public static class ButtsBotScript
 
         try
         {
-            var (candidates, tagMap) = await AnalyzeTextAsync(message, nlpApiKey);
+            var (candidates, tagMap) = AnalyzeTextLocal(message);
 
             if (candidates == null || candidates.Count == 0)
             {
-                await TryLog($"ButtsBot: No nouns or adjectives found.");
+                await TryLog("ButtsBot: No nouns or adjectives found.");
                 return null;
             }
 
@@ -57,40 +59,25 @@ public static class ButtsBotScript
         }
     }
 
-    private static async Task<(List<string>, Dictionary<string, string>)> AnalyzeTextAsync(string text, string nlpApiKey)
+    private static (List<string>, Dictionary<string, string>) AnalyzeTextLocal(string text)
     {
-        var url = "https://api.nlpcloud.io/v1/en_core_web_lg/dependencies";
+        string modelPath = ExtractModelToTempFile("en-pos-maxent.bin");
+        var tokenizer = new EnglishRuleBasedTokenizer(false);
+        var tagger = new EnglishMaximumEntropyPosTagger(modelPath);
 
-        var payload = new { text = text };
-        var requestContent = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
-
-        client.DefaultRequestHeaders.Clear();
-        client.DefaultRequestHeaders.Add("Authorization", $"Token {nlpApiKey}");
-
-        var response = await client.PostAsync(url, requestContent);
-
-        if (!response.IsSuccessStatusCode)
-            return (null, null);
-
-        string responseContent = await response.Content.ReadAsStringAsync();
-        var json = JObject.Parse(responseContent);
+        var tokens = tokenizer.Tokenize(text);
+        var tags = tagger.Tag(tokens);
 
         var candidates = new List<string>();
         var tagMap = new Dictionary<string, string>();
 
-        var words = json["words"] as JArray;
-        if (words != null)
+        for (int i = 0; i < tokens.Length; i++)
         {
-            foreach (var wordObj in words)
+            string tag = tags[i];
+            if (tag.StartsWith("NN") || tag.StartsWith("JJ"))
             {
-                string word = wordObj.Value<string>("text") ?? "";
-                string tag = wordObj.Value<string>("tag") ?? "";
-
-                if (tag.StartsWith("NN") || tag.StartsWith("JJ")) // nouns and adjectives
-                {
-                    candidates.Add(word);
-                    tagMap[word] = tag;
-                }
+                candidates.Add(tokens[i]);
+                tagMap[tokens[i]] = tag;
             }
         }
 
@@ -102,12 +89,28 @@ public static class ButtsBotScript
         if (string.IsNullOrEmpty(find))
             return source;
 
-        return System.Text.RegularExpressions.Regex.Replace(
+        return Regex.Replace(
             source,
-            @"\b" + System.Text.RegularExpressions.Regex.Escape(find) + @"\b",
+            @"\b" + Regex.Escape(find) + @"\b",
             replace,
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            RegexOptions.IgnoreCase
         );
+    }
+
+    private static string ExtractModelToTempFile(string resourceName)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var fullName = assembly.GetManifestResourceNames()
+            .FirstOrDefault(r => r.EndsWith(resourceName));
+
+        if (fullName == null)
+            throw new Exception($"Embedded resource {resourceName} not found.");
+
+        string tempPath = Path.GetTempFileName();
+        using var input = assembly.GetManifestResourceStream(fullName);
+        using var output = new FileStream(tempPath, FileMode.Create, FileAccess.Write);
+        input.CopyTo(output);
+        return tempPath;
     }
 
     private static async Task TryLog(string message)

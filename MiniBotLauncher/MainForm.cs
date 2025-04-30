@@ -18,7 +18,6 @@ public partial class MainForm : Form
     private TextBox txtClientID;
     private TextBox txtOAuthToken;
     private TextBox txtChannelName;
-    private TextBox txtNLPApiKey;
     private CheckBox toggleAskAI;
     private CheckBox toggleWeather;
     private CheckBox toggleTranslate;
@@ -130,9 +129,16 @@ public partial class MainForm : Form
 
             var label = new Label
             {
-                Text = "v1.5 ©2025 Ixitxachitl",
+                Text = "v1.6 ©2025 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20)
+            };
+
+            var attrabution = new Label
+            {
+                Text = "Includes Apache OpenNLP (Apache License 2.0)",
+                AutoSize = true,
+                Location = new Point(20, 35)
             };
 
             var link = new LinkLabel
@@ -159,6 +165,7 @@ public partial class MainForm : Form
             };
 
             infoForm.Controls.Add(label);
+            infoForm.Controls.Add(attrabution);
             infoForm.Controls.Add(link);
             infoForm.Controls.Add(okButton);
             infoForm.AcceptButton = okButton;
@@ -203,7 +210,7 @@ public partial class MainForm : Form
     private void InitializeComponent()
     {
         this.Text = "MiniBotLauncher";
-        this.Size = new Size(515, 665);
+        this.Size = new Size(515, 625);
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MaximizeBox = false;
         this.BackColor = Color.FromArgb(30, 30, 30);
@@ -314,10 +321,6 @@ public partial class MainForm : Form
         txtChannelName = CreateTextBox();
         txtChannelName.TextChanged += TextFields_TextChanged;
 
-        Label lblNLPKey = CreateLabel("NLP API Key");
-        txtNLPApiKey = CreateTextBox(true);
-        txtNLPApiKey.TextChanged += TextFields_TextChanged;
-
         Label lblOAuthToken = CreateLabel("OAuth Token");
         txtOAuthToken = CreateTextBox(true);
         txtOAuthToken.ReadOnly = true;
@@ -381,7 +384,6 @@ public partial class MainForm : Form
         lblOAuthToken, txtOAuthToken,
         btnGetToken, btnConnect,
         lblChannel, txtChannelName,
-        lblNLPKey, txtNLPApiKey,
         lblScripts,
         toggleAskAI, toggleWeather,
         toggleTranslate, toggleButtsbot,
@@ -652,7 +654,6 @@ public partial class MainForm : Form
             txtBotUsername.Enabled = false;
             txtClientID.Enabled = false;
             txtChannelName.Enabled = false;
-            txtNLPApiKey.Enabled = false;
             btnGetToken.Enabled = false;
         }));
     }
@@ -671,7 +672,6 @@ public partial class MainForm : Form
             txtBotUsername.Enabled = true;
             txtClientID.Enabled = true;
             txtChannelName.Enabled = true;
-            txtNLPApiKey.Enabled = true;
             btnGetToken.Enabled = true;
 
             // Clean up old client properly
@@ -701,7 +701,6 @@ public partial class MainForm : Form
             txtClientID.Text = settings.ClientID;
             txtOAuthToken.Text = settings.OAuthToken;
             txtChannelName.Text = settings.ChannelName;
-            txtNLPApiKey.Text = settings.NLPApiKey;
 
             toggleAskAI.Checked = settings.AskAIEnabled;
             toggleWeather.Checked = settings.WeatherEnabled;
@@ -720,7 +719,6 @@ public partial class MainForm : Form
             ClientID = txtClientID.Text,
             OAuthToken = txtOAuthToken.Text,
             ChannelName = txtChannelName.Text,
-            NLPApiKey = txtNLPApiKey.Text,
             AskAIEnabled = toggleAskAI.Checked,
             WeatherEnabled = toggleWeather.Checked,
             TranslateEnabled = toggleTranslate.Checked,
@@ -768,12 +766,8 @@ public partial class MainForm : Form
         toggleWeather.Enabled = true;
         toggleTranslate.Enabled = true;
         toggleMarkovChain.Enabled = true;
-
-        if (!string.IsNullOrWhiteSpace(txtNLPApiKey.Text))
-        {
-            toggleButtsbot.Enabled = true;
-            toggleClapThat.Enabled = true;
-        }
+        toggleButtsbot.Enabled = true;
+        toggleClapThat.Enabled = true;
     }
 
     private void TextFields_TextChanged(object sender, EventArgs e) => UpdateToggleStates();
@@ -781,7 +775,6 @@ public partial class MainForm : Form
     private void UpdateToggleStates()
     {
         bool basicReady = IsBasicAuthValid();
-        bool nlpReady = IsNLPReady();
         bool getTokenReady = !string.IsNullOrWhiteSpace(txtBotUsername.Text) &&
                              !string.IsNullOrWhiteSpace(txtClientID.Text) &&
                              lblConnectionStatus.Text != "Connected";
@@ -795,9 +788,8 @@ public partial class MainForm : Form
             toggleWeather.Enabled = basicReady;
             toggleTranslate.Enabled = basicReady;
             toggleMarkovChain.Enabled = basicReady;
-
-            toggleButtsbot.Enabled = nlpReady;
-            toggleClapThat.Enabled = nlpReady;
+            toggleButtsbot.Enabled = basicReady;
+            toggleClapThat.Enabled = basicReady;
         }
         else
         {
@@ -810,8 +802,6 @@ public partial class MainForm : Form
         !string.IsNullOrWhiteSpace(txtClientID.Text) &&
         !string.IsNullOrWhiteSpace(txtOAuthToken.Text) &&
         !string.IsNullOrWhiteSpace(txtChannelName.Text);
-
-    private bool IsNLPReady() => IsBasicAuthValid() && !string.IsNullOrWhiteSpace(txtNLPApiKey.Text);
 
     private void Log(string message)
     {
@@ -876,7 +866,7 @@ public partial class MainForm : Form
 
         if (toggleButtsbot.Checked)
         {
-            string buttsMessage = await ButtsBotScript.Process(message, txtNLPApiKey.Text, username, txtBotUsername.Text);
+            string buttsMessage = await ButtsBotScript.Process(message, username, txtBotUsername.Text);
             if (!string.IsNullOrWhiteSpace(buttsMessage))
             {
                 client.SendMessage(channel, buttsMessage);
@@ -895,7 +885,7 @@ public partial class MainForm : Form
         
         if (toggleClapThat.Checked)
         {
-            string clapResponse = await ClapThatBotScript.Process(message, txtNLPApiKey.Text, username, txtBotUsername.Text);
+            string clapResponse = await ClapThatBotScript.Process(message, username, txtBotUsername.Text);
             if (!string.IsNullOrWhiteSpace(clapResponse))
             {
                 client.SendMessage(channel, clapResponse);
@@ -924,7 +914,6 @@ public partial class MainForm : Form
         public string ClientID { get; set; }
         public string OAuthToken { get; set; }
         public string ChannelName { get; set; }
-        public string NLPApiKey { get; set; }
         public bool AskAIEnabled { get; set; }
         public bool WeatherEnabled { get; set; }
         public bool TranslateEnabled { get; set; }

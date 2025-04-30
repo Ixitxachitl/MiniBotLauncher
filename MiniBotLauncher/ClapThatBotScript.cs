@@ -1,26 +1,26 @@
 ﻿using System;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
+using OpenNLP.Tools.PosTagger;
+using OpenNLP.Tools.Tokenize;
 
 public static class ClapThatBotScript
 {
-    private static readonly HttpClient client = new HttpClient();
     private static readonly Random rng = new Random();
 
-    public static Func<string, Task> DebugLog = null; // Optional external debug logger
+    public static Func<string, Task> DebugLog = null;
 
-    public static async Task<string> Process(string message, string nlpApiKey, string username, string botUsername)
+    public static async Task<string> Process(string message, string username, string botUsername)
     {
-        if (string.IsNullOrWhiteSpace(message) || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(nlpApiKey))
+        if (string.IsNullOrWhiteSpace(message) || string.IsNullOrWhiteSpace(username))
             return null;
 
         if (username.Equals(botUsername, StringComparison.OrdinalIgnoreCase))
-            return null; // Don't respond to own messages
+            return null;
 
-        // 2% random trigger chance
         if (rng.NextDouble() > 0.02)
         {
             await TryLog($"ClapThatBot: Skipped message from {username} (no trigger).");
@@ -31,7 +31,7 @@ public static class ClapThatBotScript
 
         try
         {
-            var (adjective, noun, isPlural) = await FindAdjectiveNounPairAsync(message, nlpApiKey);
+            var (adjective, noun, isPlural) = FindAdjectiveNounPairLocal(message);
 
             if (string.IsNullOrEmpty(adjective) || string.IsNullOrEmpty(noun))
             {
@@ -52,57 +52,44 @@ public static class ClapThatBotScript
         }
     }
 
-    private static async Task<(string, string, bool)> FindAdjectiveNounPairAsync(string text, string nlpApiKey)
+    private static (string, string, bool) FindAdjectiveNounPairLocal(string text)
     {
-        try
+        string modelPath = ExtractModelToTempFile("en-pos-maxent.bin");
+        var tokenizer = new EnglishRuleBasedTokenizer(false);
+        var tagger = new EnglishMaximumEntropyPosTagger(modelPath);
+
+        var tokens = tokenizer.Tokenize(text);
+        var tags = tagger.Tag(tokens);
+
+        for (int i = 0; i < tokens.Length - 1; i++)
         {
-            var url = "https://api.nlpcloud.io/v1/en_core_web_lg/dependencies";
+            string tag1 = tags[i];
+            string tag2 = tags[i + 1];
 
-            var payload = new { text = text };
-            var requestContent = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
-
-            client.DefaultRequestHeaders.Clear();
-            client.DefaultRequestHeaders.Add("Authorization", $"Token {nlpApiKey}");
-
-            var response = await client.PostAsync(url, requestContent);
-
-            if (!response.IsSuccessStatusCode)
+            if (tag1.StartsWith("JJ") && tag2.StartsWith("NN"))
             {
-                await TryLog($"ClapThatBot: NLP request failed: {response.StatusCode}");
-                return (null, null, false);
+                bool isPlural = tag2 == "NNS" || tag2 == "NNPS";
+                return (tokens[i], tokens[i + 1], isPlural);
             }
-
-            string responseContent = await response.Content.ReadAsStringAsync();
-            var json = JObject.Parse(responseContent);
-
-            var words = json["words"] as JArray;
-            if (words == null || words.Count < 2)
-                return (null, null, false);
-
-            for (int i = 0; i < words.Count - 1; i++)
-            {
-                var currentWord = words[i];
-                var nextWord = words[i + 1];
-
-                string currentTag = currentWord.Value<string>("tag") ?? "";
-                string nextTag = nextWord.Value<string>("tag") ?? "";
-
-                if (currentTag.StartsWith("JJ") && nextTag.StartsWith("NN"))
-                {
-                    string adjective = currentWord.Value<string>("text") ?? "";
-                    string noun = nextWord.Value<string>("text") ?? "";
-                    bool isPlural = nextTag == "NNS" || nextTag == "NNPS";
-                    return (adjective, noun, isPlural);
-                }
-            }
-
-            return (null, null, false);
         }
-        catch (Exception ex)
-        {
-            await TryLog($"ClapThatBot: FindAdjectiveNounPair error: {ex.Message}");
-            return (null, null, false);
-        }
+
+        return (null, null, false);
+    }
+
+    private static string ExtractModelToTempFile(string resourceName)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var fullName = assembly.GetManifestResourceNames()
+            .FirstOrDefault(r => r.EndsWith(resourceName));
+
+        if (fullName == null)
+            throw new Exception($"Embedded resource {resourceName} not found.");
+
+        string tempPath = Path.GetTempFileName();
+        using var input = assembly.GetManifestResourceStream(fullName);
+        using var output = new FileStream(tempPath, FileMode.Create, FileAccess.Write);
+        input.CopyTo(output);
+        return tempPath;
     }
 
     private static async Task TryLog(string message)
