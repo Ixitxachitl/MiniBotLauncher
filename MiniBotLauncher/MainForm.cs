@@ -113,6 +113,10 @@ public partial class MainForm : Form
         btnInfo.FlatAppearance.BorderSize = 0;
         btnInfo.Click += (s, e) =>
         {
+            bool wasTopMost = this.TopMost;
+            this.TopMost = false;
+            this.SendToBack(); // 💡 force z-order refresh
+
             Form infoForm = new Form
             {
                 Text = "About MiniBotLauncher",
@@ -120,7 +124,8 @@ public partial class MainForm : Form
                 StartPosition = FormStartPosition.CenterParent,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
-                MinimizeBox = false
+                MinimizeBox = false,
+                TopMost = true
             };
 
             var label = new Label
@@ -157,7 +162,11 @@ public partial class MainForm : Form
             infoForm.Controls.Add(link);
             infoForm.Controls.Add(okButton);
             infoForm.AcceptButton = okButton;
+
             infoForm.ShowDialog();
+
+            this.TopMost = wasTopMost;
+            this.BringToFront();
         };
 
         this.Controls.Add(btnPinTop);
@@ -194,7 +203,7 @@ public partial class MainForm : Form
     private void InitializeComponent()
     {
         this.Text = "MiniBotLauncher";
-        this.Size = new Size(500, 670);
+        this.Size = new Size(500, 680);
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MaximizeBox = false;
         this.BackColor = Color.FromArgb(30, 30, 30);
