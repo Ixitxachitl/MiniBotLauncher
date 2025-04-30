@@ -130,7 +130,7 @@ public partial class MainForm : Form
 
             var label = new Label
             {
-                Text = "©2025 Ixitxachitl",
+                Text = "v1.5 ©2025 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20)
             };
@@ -203,7 +203,7 @@ public partial class MainForm : Form
     private void InitializeComponent()
     {
         this.Text = "MiniBotLauncher";
-        this.Size = new Size(515, 680);
+        this.Size = new Size(515, 665);
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MaximizeBox = false;
         this.BackColor = Color.FromArgb(30, 30, 30);
@@ -307,11 +307,21 @@ public partial class MainForm : Form
         txtBotUsername.TextChanged += TextFields_TextChanged;
 
         Label lblClientID = CreateLabel("Client ID");
-        txtClientID = CreateTextBox();
+        txtClientID = CreateTextBox(true);
         txtClientID.TextChanged += TextFields_TextChanged;
+
+        Label lblChannel = CreateLabel("Channel to Join");
+        txtChannelName = CreateTextBox();
+        txtChannelName.TextChanged += TextFields_TextChanged;
+
+        Label lblNLPKey = CreateLabel("NLP API Key");
+        txtNLPApiKey = CreateTextBox(true);
+        txtNLPApiKey.TextChanged += TextFields_TextChanged;
 
         Label lblOAuthToken = CreateLabel("OAuth Token");
         txtOAuthToken = CreateTextBox(true);
+        txtOAuthToken.ReadOnly = true;
+        txtOAuthToken.TabStop = false;
         txtOAuthToken.TextChanged += TextFields_TextChanged;
 
         btnGetToken = CreateButton("Get Token");
@@ -324,18 +334,7 @@ public partial class MainForm : Form
         btnConnect.Left = marginLeft + btnGetToken.Width + toggleGap + 120; // << right next to GetToken + a small gap
         btnConnect.Click += btnConnect_Click;
 
-
-        currentTop += 55;
-
-        Label lblChannel = CreateLabel("Channel to Join");
-        txtChannelName = CreateTextBox();
-        txtChannelName.TextChanged += TextFields_TextChanged;
-
-        Label lblNLPKey = CreateLabel("NLP API Key");
-        txtNLPApiKey = CreateTextBox();
-        txtNLPApiKey.TextChanged += TextFields_TextChanged;
-
-        currentTop += 10;
+        currentTop += 45;
         Label lblScripts = CreateLabel("Toggle Scripts");
 
         toggleAskAI = CreateToggle("AskAI", marginLeft);
