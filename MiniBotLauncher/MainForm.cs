@@ -36,6 +36,9 @@ public partial class MainForm : Form
     );
     private bool isDisconnecting = false;
 
+    private NotifyIcon trayIcon;
+    private ContextMenuStrip trayMenu;
+
     // Stored event handlers for clean unsubscription
     private EventHandler<OnConnectedArgs> onConnected;
     private EventHandler<OnDisconnectedEventArgs> onDisconnected;
@@ -44,9 +47,15 @@ public partial class MainForm : Form
     private EventHandler<OnLogArgs> onLog;
     private EventHandler<OnMessageReceivedArgs> onMessageReceived;
 
+    private Button btnPinTop;
+    private Button btnMinimizeTray;
+    private Button btnInfo;
+
     public MainForm()
     {
         InitializeComponent();
+        AddTopRightButtons();
+        SetupTrayIcon();
         using (var stream = Assembly.GetExecutingAssembly()
             .GetManifestResourceStream("MiniBotLauncher.MiniBotLauncher.ico"))
         {
@@ -60,6 +69,126 @@ public partial class MainForm : Form
         ClapThatBotScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
 
         client = new TwitchClient();
+    }
+
+    private void AddTopRightButtons()
+    {
+        btnPinTop = new Button
+        {
+            Text = "📌",
+            Size = new Size(30, 30),
+            Location = new Point(this.ClientSize.Width - 110, 10),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.Transparent,
+            ForeColor = Color.White
+        };
+        btnPinTop.FlatAppearance.BorderSize = 0;
+        btnPinTop.Click += (s, e) =>
+        {
+            this.TopMost = !this.TopMost;
+            btnPinTop.BackColor = this.TopMost ? Color.SteelBlue : Color.Transparent;
+        };
+
+        btnMinimizeTray = new Button
+        {
+            Text = "🗕",
+            Size = new Size(30, 30),
+            Location = new Point(this.ClientSize.Width - 75, 10),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.Transparent,
+            ForeColor = Color.White
+        };
+        btnMinimizeTray.FlatAppearance.BorderSize = 0;
+        btnMinimizeTray.Click += (s, e) => { this.Hide(); trayIcon.Visible = true; };
+
+        btnInfo = new Button
+        {
+            Text = "ℹ️",
+            Size = new Size(30, 30),
+            Location = new Point(this.ClientSize.Width - 40, 10),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.Transparent,
+            ForeColor = Color.White
+        };
+        btnInfo.FlatAppearance.BorderSize = 0;
+        btnInfo.Click += (s, e) =>
+        {
+            Form infoForm = new Form
+            {
+                Text = "About MiniBotLauncher",
+                Size = new Size(400, 180),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+
+            var label = new Label
+            {
+                Text = "©2025 Ixitxachitl",
+                AutoSize = true,
+                Location = new Point(20, 20)
+            };
+
+            var link = new LinkLabel
+            {
+                Text = "https://github.com/Ixitxachitl/MiniBotLauncher",
+                AutoSize = true,
+                Location = new Point(20, 50)
+            };
+            link.LinkClicked += (ls, le) =>
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = link.Text,
+                    UseShellExecute = true
+                });
+            };
+
+            var okButton = new Button
+            {
+                Text = "OK",
+                DialogResult = DialogResult.OK,
+                Location = new Point(150, 100),
+                Width = 80
+            };
+
+            infoForm.Controls.Add(label);
+            infoForm.Controls.Add(link);
+            infoForm.Controls.Add(okButton);
+            infoForm.AcceptButton = okButton;
+            infoForm.ShowDialog();
+        };
+
+        this.Controls.Add(btnPinTop);
+        this.Controls.Add(btnMinimizeTray);
+        this.Controls.Add(btnInfo);
+        var tooltip = new ToolTip();
+        tooltip.SetToolTip(btnPinTop, "Pin on Top");
+        tooltip.SetToolTip(btnMinimizeTray, "Minimize to Tray");
+        tooltip.SetToolTip(btnInfo, "About");
+    }
+
+    private void SetupTrayIcon()
+    {
+        trayMenu = new ContextMenuStrip();
+        trayMenu.Items.Add("Restore", null, (s, e) => { this.Show(); this.WindowState = FormWindowState.Normal; this.Activate(); trayIcon.Visible = false; });
+        trayMenu.Items.Add("Exit", null, (s, e) => { trayIcon.Visible = false; Application.Exit(); });
+
+        Icon icon;
+        using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("MiniBotLauncher.MiniBotLauncher.ico"))
+        {
+            icon = new Icon(stream);
+        }
+
+        trayIcon = new NotifyIcon()
+        {
+            Text = "MiniBotLauncher",
+            Icon = icon,
+            ContextMenuStrip = trayMenu,
+            Visible = false
+        };
+        trayIcon.DoubleClick += (s, e) => { this.Show(); this.WindowState = FormWindowState.Normal; this.Activate(); trayIcon.Visible = false; };
     }
 
     private void InitializeComponent()
@@ -79,7 +208,7 @@ public partial class MainForm : Form
         int marginLeft = 30;
         int toggleGap = 10;
         int inputLeft = 150;
-        int currentTop = 30;
+        int currentTop = 50;
         int spacing = 40;
         int toggleWidth = (500 - marginLeft * 2 - toggleGap) / 2;
 
@@ -120,7 +249,7 @@ public partial class MainForm : Form
                 Text = text,
                 Left = inputLeft,
                 Top = currentTop,
-                Width = 150,
+                Width = 155,
                 Height = 40,
                 BackColor = buttonColor,
                 ForeColor = foreColor,
@@ -178,12 +307,12 @@ public partial class MainForm : Form
 
         btnGetToken = CreateButton("Get Token");
         btnGetToken.Top = currentTop;
-        btnGetToken.Left = marginLeft + 125; // << place left button at left margin
+        btnGetToken.Left = marginLeft + 120; // << place left button at left margin
         btnGetToken.Click += btnGetToken_Click;
 
         btnConnect = CreateButton("Connect");
         btnConnect.Top = currentTop;
-        btnConnect.Left = marginLeft + btnGetToken.Width + toggleGap + 125; // << right next to GetToken + a small gap
+        btnConnect.Left = marginLeft + btnGetToken.Width + toggleGap + 120; // << right next to GetToken + a small gap
         btnConnect.Click += btnConnect_Click;
 
 
