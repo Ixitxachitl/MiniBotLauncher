@@ -77,7 +77,7 @@ public partial class MainForm : Form
         {
             Text = "📌",
             Size = new Size(30, 30),
-            Location = new Point(this.ClientSize.Width - 110, 10),
+            Location = new Point(this.ClientSize.Width - 125, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
             ForeColor = Color.White
@@ -93,7 +93,7 @@ public partial class MainForm : Form
         {
             Text = "🗕",
             Size = new Size(30, 30),
-            Location = new Point(this.ClientSize.Width - 75, 10),
+            Location = new Point(this.ClientSize.Width - 90, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
             ForeColor = Color.White
@@ -105,7 +105,7 @@ public partial class MainForm : Form
         {
             Text = "ℹ️",
             Size = new Size(30, 30),
-            Location = new Point(this.ClientSize.Width - 40, 10),
+            Location = new Point(this.ClientSize.Width - 55, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
             ForeColor = Color.White
@@ -203,7 +203,7 @@ public partial class MainForm : Form
     private void InitializeComponent()
     {
         this.Text = "MiniBotLauncher";
-        this.Size = new Size(500, 680);
+        this.Size = new Size(515, 680);
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MaximizeBox = false;
         this.BackColor = Color.FromArgb(30, 30, 30);
