@@ -9,10 +9,17 @@ public static class AskAIScript
     private static readonly HttpClient httpClient = new HttpClient();
     private static readonly string gptServerUrl = "http://localhost:4891/v1/chat/completions";
 
+    public static Func<string, Task> DebugLog = null;
+
     public static async Task<string> GetResponse(string prompt)
     {
         if (string.IsNullOrWhiteSpace(prompt))
+        {
+            await TryLog("AskAIScript: Empty prompt received.");
             return "You need to provide a prompt after !askai!";
+        }
+
+        await TryLog($"AskAIScript: Sending prompt to GPT server: \"{prompt}\"");
 
         try
         {
@@ -34,28 +41,41 @@ public static class AskAIScript
 
             if (!response.IsSuccessStatusCode)
             {
+                await TryLog($"AskAIScript: GPT server returned status {response.StatusCode}.");
                 return $"Error contacting AI: {response.StatusCode}";
             }
 
             string responseString = await response.Content.ReadAsStringAsync();
-            JObject parsed = JObject.Parse(responseString);
+            await TryLog("AskAIScript: Received raw response from server.");
 
+            JObject parsed = JObject.Parse(responseString);
             string reply = parsed["choices"]?[0]?["message"]?["content"]?.ToString();
 
             if (string.IsNullOrWhiteSpace(reply))
             {
+                await TryLog("AskAIScript: Empty reply from GPT server.");
                 return "Sorry, no reply from AI.";
             }
 
-            // Truncate reply if too long
             if (reply.Length > 450)
+            {
+                await TryLog("AskAIScript: Truncating long reply.");
                 reply = reply.Substring(0, 450) + "...";
+            }
 
+            await TryLog($"AskAIScript: Final reply: \"{reply.Trim()}\"");
             return reply.Trim();
         }
         catch (Exception ex)
         {
+            await TryLog($"AskAIScript: Exception occurred - {ex.Message}");
             return $"Error contacting AI: {ex.Message}";
         }
+    }
+
+    private static async Task TryLog(string message)
+    {
+        if (DebugLog != null)
+            await DebugLog.Invoke(message);
     }
 }

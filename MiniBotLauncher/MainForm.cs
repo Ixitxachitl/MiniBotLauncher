@@ -66,6 +66,10 @@ public partial class MainForm : Form
 
         ButtsBotScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
         ClapThatBotScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
+        TranslateScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
+        WeatherScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
+        AskAIScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
+        MarkovChainScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
 
         client = new TwitchClient();
     }
@@ -129,7 +133,7 @@ public partial class MainForm : Form
 
             var label = new Label
             {
-                Text = "v1.6 ©2025 Ixitxachitl",
+                Text = "v1.7 ©2025 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20)
             };

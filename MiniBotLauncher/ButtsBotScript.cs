@@ -19,10 +19,10 @@ public static class ButtsBotScript
         if (string.IsNullOrWhiteSpace(message) || string.IsNullOrWhiteSpace(username))
             return null;
 
-        if (message.StartsWith("!", StringComparison.Ordinal))
+        if (message.TrimStart().StartsWith("!", StringComparison.Ordinal))
             return null;
 
-        if (rng.NextDouble() > 0.02)
+        if (rng.NextDouble() > 0.03)
         {
             await TryLog($"ButtsBot: Skipped message from {username} (no trigger).");
             return null;
@@ -61,7 +61,9 @@ public static class ButtsBotScript
 
     private static (List<string>, Dictionary<string, string>) AnalyzeTextLocal(string text)
     {
-        string modelPath = ExtractModelToTempFile("en-pos-maxent.bin");
+        string modelPath = ExtractModelToTempFile("EnglishPOS.nbin");
+        DebugLog?.Invoke($"ButtsBot: Loading POS model from: {modelPath}");
+
         var tokenizer = new EnglishRuleBasedTokenizer(false);
         var tagger = new EnglishMaximumEntropyPosTagger(modelPath);
 
@@ -91,7 +93,7 @@ public static class ButtsBotScript
 
         return Regex.Replace(
             source,
-            @"\b" + Regex.Escape(find) + @"\b",
+            $@"\b{Regex.Escape(find)}\b",
             replace,
             RegexOptions.IgnoreCase
         );
@@ -101,7 +103,7 @@ public static class ButtsBotScript
     {
         var assembly = Assembly.GetExecutingAssembly();
         var fullName = assembly.GetManifestResourceNames()
-            .FirstOrDefault(r => r.EndsWith(resourceName));
+            .FirstOrDefault(r => r.EndsWith(resourceName, StringComparison.OrdinalIgnoreCase));
 
         if (fullName == null)
             throw new Exception($"Embedded resource {resourceName} not found.");

@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 
 public static class MarkovChainScript
 {
+    public static Func<string, Task> DebugLog = null;
     private static Dictionary<string, List<string>> transitions = new Dictionary<string, List<string>>();
     private static int messageCounter = 0;
     private static Random rng = new Random();
@@ -14,53 +15,49 @@ public static class MarkovChainScript
         "markov_brain.json"
     );
 
-    private static readonly HashSet<string> knownBots = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-    {
-        "streamelements", "nightbot", "sery_bot", "wizebot", "kofistreambot",
-        "botrixoficial", "tangiabot", "moobot", "own3d", "creatisbot",
-        "frostytoolsdotcom", "streamlabs", "pokemoncommunitygame", "fossabot",
-        "soundalerts", "botbandera", "overlayexpert", "trackerggbot",
-        "songlistbot", "commanderroot", "instructbot", "autogpttest",
-        "aerokickbot", "streamerelem", "ronniabot", "tune2livebot",
-        "peepostreambot", "playwithviewersbot", "hexe_bot", "super_sweet_bot",
-        "streamroutine_bot", "remasuri_bot", "milanitommasobot", "jeetbot",
-        "bot584588", "lurky_dogg"
-    };
-
     public static string LearnAndMaybeRespond(string message, string username, string botUsername)
     {
         if (string.IsNullOrWhiteSpace(message) || string.IsNullOrWhiteSpace(username))
             return null;
 
         if (message.StartsWith("!", StringComparison.Ordinal))
+        {
+            TryLog("MarkovChainScript: Ignored command message.");
             return null;
+        }
 
-        username = username.ToLowerInvariant();
-        botUsername = botUsername.ToLowerInvariant();
-
-        if (username == botUsername)
+        if (username.Equals(botUsername, StringComparison.OrdinalIgnoreCase))
+        {
+            TryLog("MarkovChainScript: Ignored message from self.");
             return null;
-
-        if (knownBots.Contains(username))
-            return null;
+        }
 
         string lowerMessage = message.ToLowerInvariant();
         if (lowerMessage.Contains("http") || lowerMessage.Contains(".com") || lowerMessage.Contains(".net") || lowerMessage.Contains(".org"))
+        {
+            TryLog("MarkovChainScript: Ignored link-containing message.");
             return null;
+        }
 
         if (!IsMostlyEnglish(message))
+        {
+            TryLog("MarkovChainScript: Ignored non-English message.");
             return null;
+        }
 
         if (transitions.Count == 0)
             LoadTransitions();
 
+        TryLog("MarkovChainScript: Learning from message.");
         LearnFromChat(message);
 
         messageCounter++;
         if (messageCounter >= 35)
         {
             messageCounter = 0;
-            return GenerateSentence();
+            string response = GenerateSentence();
+            TryLog($"MarkovChainScript: Responding with generated sentence: {response}");
+            return response;
         }
 
         SaveTransitions();
@@ -123,9 +120,9 @@ public static class MarkovChainScript
             string json = JsonConvert.SerializeObject(transitions, Formatting.Indented);
             File.WriteAllText(saveFilePath, json);
         }
-        catch
+        catch (Exception ex)
         {
-            // Silent fail (no debug logs)
+            TryLog($"MarkovChainScript: Error saving transitions - {ex.Message}");
         }
     }
 
@@ -139,9 +136,9 @@ public static class MarkovChainScript
                 transitions = JsonConvert.DeserializeObject<Dictionary<string, List<string>>>(json);
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Silent fail (no debug logs)
+            TryLog($"MarkovChainScript: Error loading transitions - {ex.Message}");
         }
     }
 
@@ -163,5 +160,11 @@ public static class MarkovChainScript
             return false;
 
         return (double)englishCharCount / totalCharCount >= 0.7;
+    }
+
+    private static void TryLog(string message)
+    {
+        if (DebugLog != null)
+            DebugLog.Invoke(message);
     }
 }

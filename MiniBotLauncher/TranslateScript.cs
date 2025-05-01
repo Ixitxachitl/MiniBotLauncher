@@ -9,6 +9,8 @@ public static class TranslateScript
 {
     private static readonly HttpClient client = new HttpClient();
 
+    public static Func<string, Task> DebugLog = null;
+
     public static async Task<string> TryTranslate(string inputText, string username)
     {
         if (string.IsNullOrWhiteSpace(inputText))
@@ -17,10 +19,17 @@ public static class TranslateScript
         if (string.IsNullOrWhiteSpace(username))
             return null;
 
+        if (inputText.TrimStart().StartsWith("!", StringComparison.Ordinal))
+        {
+            await TryLog("TranslateScript: Ignored command message.");
+            return null;
+        }
+
+        await TryLog($"TranslateScript: Evaluating message from {username}: \"{inputText}\"");
+
         string trimmedInput = inputText.Trim().ToLowerInvariant();
         string forcedLang = null;
 
-        // Known short word language mapping
         var knownWords = new Dictionary<string, string>
         {
             { "si", "es" }, { "oui", "fr" }, { "no", "es" },
@@ -28,12 +37,18 @@ public static class TranslateScript
         };
 
         if (trimmedInput.Length <= 5 && knownWords.ContainsKey(trimmedInput))
+        {
             forcedLang = knownWords[trimmedInput];
+            await TryLog($"TranslateScript: Short word match. Forcing source language to '{forcedLang}'.");
+        }
 
-        (string translatedText, string sourceLang) = await TranslateText(inputText, forcedLang);
+        var (translatedText, sourceLang) = await TranslateText(inputText, forcedLang);
 
         if (string.IsNullOrWhiteSpace(translatedText))
+        {
+            await TryLog("TranslateScript: Translation result was empty.");
             return null;
+        }
 
         bool forced = forcedLang != null;
 
@@ -41,19 +56,31 @@ public static class TranslateScript
         string cleanedTranslation = CleanTextForComparison(translatedText);
 
         if (cleanedInput.Equals(cleanedTranslation, StringComparison.OrdinalIgnoreCase))
+        {
+            await TryLog("TranslateScript: Cleaned translation equals input. Skipping.");
             return null;
+        }
 
         if (!forced && sourceLang == "en")
+        {
+            await TryLog("TranslateScript: Source language is English. Skipping.");
             return null;
+        }
 
         var trustedLatinLangs = new HashSet<string> { "es", "it", "pt", "de", "fr", "nl", "ro", "pl", "sv", "no", "da" };
 
         if (IsLatinAlphabet(inputText) && !trustedLatinLangs.Contains(sourceLang))
+        {
+            await TryLog($"TranslateScript: Untrusted Latin-based source language '{sourceLang}'. Skipping.");
             return null;
+        }
 
         string fullLanguageName = GetLanguageDisplayName(sourceLang);
+        string result = $"[Translated from {fullLanguageName}] {username}: {translatedText}";
 
-        return $"[Translated from {fullLanguageName}] {username}: {translatedText}";
+        await TryLog($"TranslateScript: Returning translation: {result}");
+
+        return result;
     }
 
     private static async Task<(string, string)> TranslateText(string text, string forcedSourceLang = null)
@@ -83,12 +110,21 @@ public static class TranslateScript
 
             string sourceLang = json.Count > 2 && json[2] != null ? json[2].ToString() : "unknown";
 
+            await TryLog($"TranslateScript: Translation API returned sourceLang='{sourceLang}', translatedText='{translatedText}'");
+
             return (translatedText.Trim(), sourceLang);
         }
-        catch
+        catch (Exception ex)
         {
+            await TryLog($"TranslateScript: Error during translation API call - {ex.Message}");
             return (null, null);
         }
+    }
+
+    private static async Task TryLog(string message)
+    {
+        if (DebugLog != null)
+            await DebugLog.Invoke(message);
     }
 
     private static string GetLanguageDisplayName(string isoCode)
@@ -169,3 +205,4 @@ public static class TranslateScript
         return new string(cleanedChars.ToArray()).Trim();
     }
 }
+

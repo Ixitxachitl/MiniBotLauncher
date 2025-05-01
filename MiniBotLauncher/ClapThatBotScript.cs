@@ -18,10 +18,10 @@ public static class ClapThatBotScript
         if (string.IsNullOrWhiteSpace(message) || string.IsNullOrWhiteSpace(username))
             return null;
 
-        if (username.Equals(botUsername, StringComparison.OrdinalIgnoreCase))
+        if (message.TrimStart().StartsWith("!", StringComparison.Ordinal))
             return null;
 
-        if (rng.NextDouble() > 0.02)
+        if (rng.NextDouble() > 0.03)
         {
             await TryLog($"ClapThatBot: Skipped message from {username} (no trigger).");
             return null;
@@ -54,7 +54,9 @@ public static class ClapThatBotScript
 
     private static (string, string, bool) FindAdjectiveNounPairLocal(string text)
     {
-        string modelPath = ExtractModelToTempFile("en-pos-maxent.bin");
+        string modelPath = ExtractModelToTempFile("EnglishPOS.nbin");
+        DebugLog?.Invoke($"ClapThatBot: Loading POS model from: {modelPath}");
+
         var tokenizer = new EnglishRuleBasedTokenizer(false);
         var tagger = new EnglishMaximumEntropyPosTagger(modelPath);
 
@@ -80,7 +82,7 @@ public static class ClapThatBotScript
     {
         var assembly = Assembly.GetExecutingAssembly();
         var fullName = assembly.GetManifestResourceNames()
-            .FirstOrDefault(r => r.EndsWith(resourceName));
+            .FirstOrDefault(r => r.EndsWith(resourceName, StringComparison.OrdinalIgnoreCase));
 
         if (fullName == null)
             throw new Exception($"Embedded resource {resourceName} not found.");
@@ -89,6 +91,7 @@ public static class ClapThatBotScript
         using var input = assembly.GetManifestResourceStream(fullName);
         using var output = new FileStream(tempPath, FileMode.Create, FileAccess.Write);
         input.CopyTo(output);
+
         return tempPath;
     }
 
