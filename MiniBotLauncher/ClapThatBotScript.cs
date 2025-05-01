@@ -21,7 +21,7 @@ public static class ClapThatBotScript
         if (message.TrimStart().StartsWith("!", StringComparison.Ordinal))
             return null;
 
-        if (rng.NextDouble() > 0.03)
+        if (rng.NextDouble() > 0.02)
         {
             await TryLog($"ClapThatBot: Skipped message from {username} (no trigger).");
             return null;
