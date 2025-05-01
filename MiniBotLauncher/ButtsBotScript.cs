@@ -22,7 +22,7 @@ public static class ButtsBotScript
         if (message.TrimStart().StartsWith("!", StringComparison.Ordinal))
             return null;
 
-        if (rng.NextDouble() > 0.03)
+        if (rng.NextDouble() > 0.02)
         {
             await TryLog($"ButtsBot: Skipped message from {username} (no trigger).");
             return null;
@@ -42,6 +42,13 @@ public static class ButtsBotScript
 
             string wordToReplace = candidates[rng.Next(candidates.Count)];
             string tag = tagMap[wordToReplace];
+
+            // Skip replacement if word is only punctuation/symbols
+            if (!Regex.IsMatch(wordToReplace, @"[a-zA-Z0-9]"))
+            {
+                await TryLog($"ButtsBot: Skipped symbol-like token: \"{wordToReplace}\"");
+                return null;
+            }
 
             await TryLog($"ButtsBot: Selected \"{wordToReplace}\" (tag {tag})");
 
@@ -121,3 +128,4 @@ public static class ButtsBotScript
             await DebugLog.Invoke(message);
     }
 }
+
