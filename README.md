@@ -30,7 +30,9 @@ MiniBotLauncher is a lightweight, C#/.NET 8 Windows Forms application that conne
 
 Optional:
 - Local GPT4All server running with the correct model (`llama3-8b-instruct`) for AskAI
-- **No longer requires NLPCloud API** — ButtsBot and ClapThatBot now use an embedded, offline POS tagger model (OpenNLP)
+- No longer uses NLPCloud API — **ButtsBot** and **ClapThatBot** now use an embedded **OpenNLP GIS-format model** (`EnglishPOS.nbin`) for offline part-of-speech tagging.
+
+> If you're using POS tagging, make sure `System.Runtime.Caching` is available (install via NuGet if needed).
 
 ---
 
@@ -66,9 +68,10 @@ Optional:
 5. **Click 'Connect'**.
 6. **Toggle on the scripts you want active**.
 
-> **Important:**
-> - AskAI requires a **local GPT4All server** running with the `llama3-8b-instruct` model.
-> - ButtsBot and ClapThatBot work offline now using OpenNLP model embedded in the EXE.
+> **Important Notes:**
+> - **AskAI** requires a local GPT4All server running with the correct model (`llama3-8b-instruct`).
+> - **ButtsBot** and **ClapThatBot** now work **fully offline** using the embedded OpenNLP `.nbin` POS model.
+> - The `.nbin` model must be embedded as a resource named `EnglishPOS.nbin`.
 
 ---
 
@@ -78,19 +81,19 @@ Optional:
 |:---|:---|
 | AskAI | Answers natural language questions. Requires a local GPT4All server running the `llama3-8b-instruct` model. |
 | Weather | Provides real-time weather based on city name. |
-| Translate | Automatically Translates Non-English into English. |
-| ButtsBot | Replaces random words with "butt"/"butts" in chat using local POS tagging. |
-| ClapThatBot | Fun "I'd clap that" joke generation using local POS tagging. |
-| MarkovChain | Learns from chat and generates fun random sentences every 35 messages. |
+| Translate | Automatically translates non-English messages to English. |
+| ButtsBot | Replaces adjectives or nouns with "butt"/"butts" using local POS tagging. |
+| ClapThatBot | Generates "I'd clap that" jokes from adjective+noun pairs using local POS tagging. |
+| MarkovChain | Learns from chat and generates fun, random sentences every 35 messages. |
 
 ---
 
 ## 🚀 Building from Source
 
-- Open `MiniBotLauncher.sln` in Visual Studio 2022+.
-- Set Configuration to `Release`.
-- Right-click project → Publish.
-- Set to **Self-contained**, **Single EXE** if you want a portable app.
+- Open `MiniBotLauncher.sln` in Visual Studio 2022+
+- Set Configuration to `Release`
+- Right-click project → Publish
+- Use **Self-contained**, **Single EXE** if you want a portable build
 
 ---
 
@@ -99,7 +102,7 @@ Optional:
 MIT License. Free for any personal or commercial use.
 
 OpenNLP is used for offline part-of-speech tagging and is licensed under the Apache License 2.0.
-See `/Resources/Models/LICENSE-OpenNLP.txt` for details.
+See `/Resources/Models/LICENSE-OpenNLP.txt` for attribution.
 
 ---
 
@@ -107,7 +110,7 @@ See `/Resources/Models/LICENSE-OpenNLP.txt` for details.
 
 - TwitchLib (chat connection)
 - Newtonsoft.Json (settings and Markov brain)
-- OpenNLP (offline POS tagging)
+- OpenNLP (offline POS tagging with legacy `.nbin` model)
 - GPT4All (local AI serving for AskAI)
 - Built by **Ixitxachitl**
 
