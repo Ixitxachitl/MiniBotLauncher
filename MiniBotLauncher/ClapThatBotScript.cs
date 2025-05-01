@@ -68,7 +68,8 @@ public static class ClapThatBotScript
             string tag1 = tags[i];
             string tag2 = tags[i + 1];
 
-            if (tag1.StartsWith("JJ") && tag2.StartsWith("NN"))
+            // Prevent identical consecutive tokens from being adjective-noun pairs
+            if (tag1.StartsWith("JJ") && tag2.StartsWith("NN") && tokens[i] != tokens[i + 1])
             {
                 bool isPlural = tag2 == "NNS" || tag2 == "NNPS";
                 return (tokens[i], tokens[i + 1], isPlural);
@@ -77,6 +78,7 @@ public static class ClapThatBotScript
 
         return (null, null, false);
     }
+
 
     private static string ExtractModelToTempFile(string resourceName)
     {

@@ -809,15 +809,24 @@ public partial class MainForm : Form
 
     private void Log(string message)
     {
+        string logEntry = $"[{DateTime.Now:HH:mm:ss}] {message}";
+
         if (txtStatusLog.InvokeRequired)
         {
             txtStatusLog.Invoke(new Action(() =>
-                txtStatusLog.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\r\n")
-            ));
+            {
+                if (string.IsNullOrEmpty(txtStatusLog.Text))
+                    txtStatusLog.AppendText(logEntry);
+                else
+                    txtStatusLog.AppendText(Environment.NewLine + logEntry);
+            }));
         }
         else
         {
-            txtStatusLog.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}\r\n");
+            if (string.IsNullOrEmpty(txtStatusLog.Text))
+                txtStatusLog.AppendText(logEntry);
+            else
+                txtStatusLog.AppendText(Environment.NewLine + logEntry);
         }
     }
 
