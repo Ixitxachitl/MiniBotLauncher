@@ -850,6 +850,13 @@ public partial class MainForm : Form
             return;
         }
 
+        string lowerMessage = message.ToLowerInvariant();
+        if (lowerMessage.Contains("http") || lowerMessage.Contains(".com") || lowerMessage.Contains(".net") || lowerMessage.Contains(".org"))
+        {
+            Log("Ignored link-containing message.");
+            return;
+        }
+
         // Command: !askai prompt
         if (toggleAskAI.Checked && message.StartsWith("!askai ", StringComparison.OrdinalIgnoreCase))
         {

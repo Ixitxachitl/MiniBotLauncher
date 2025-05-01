@@ -32,13 +32,6 @@ public static class MarkovChainScript
             return null;
         }
 
-        string lowerMessage = message.ToLowerInvariant();
-        if (lowerMessage.Contains("http") || lowerMessage.Contains(".com") || lowerMessage.Contains(".net") || lowerMessage.Contains(".org"))
-        {
-            TryLog("MarkovChainScript: Ignored link-containing message.");
-            return null;
-        }
-
         if (!IsMostlyEnglish(message))
         {
             TryLog("MarkovChainScript: Ignored non-English message.");
