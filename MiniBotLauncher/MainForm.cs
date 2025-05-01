@@ -17,6 +17,7 @@ public partial class MainForm : Form
     private TextBox txtBotUsername;
     private TextBox txtClientID;
     private TextBox txtOAuthToken;
+    private Label lblOAuthTokenDisplay;
     private TextBox txtChannelName;
     private CheckBox toggleAskAI;
     private CheckBox toggleWeather;
@@ -61,6 +62,9 @@ public partial class MainForm : Form
             this.Icon = new Icon(stream);
         }
         LoadSettings();
+        lblOAuthTokenDisplay.Text = string.IsNullOrWhiteSpace(txtOAuthToken.Text)
+            ? ""
+            : new string('●', txtOAuthToken.Text.Length);
         UpdateToggleStates();
         this.FormClosing += MainForm_FormClosing;
 
@@ -133,7 +137,7 @@ public partial class MainForm : Form
 
             var label = new Label
             {
-                Text = "v1.7 ©2025 Ixitxachitl",
+                Text = "v1.8 ©2025 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20)
             };
@@ -287,7 +291,7 @@ public partial class MainForm : Form
             {
                 Text = text,
                 Left = left,
-                Top = currentTop,
+                Top = currentTop  - 5,
                 Width = toggleWidth,
                 Height = 36,
                 Appearance = Appearance.Button,
@@ -327,21 +331,49 @@ public partial class MainForm : Form
 
         Label lblOAuthToken = CreateLabel("OAuth Token");
         txtOAuthToken = CreateTextBox(true);
+        txtOAuthToken.Visible = false;
         txtOAuthToken.ReadOnly = true;
         txtOAuthToken.TabStop = false;
         txtOAuthToken.TextChanged += TextFields_TextChanged;
 
+        lblOAuthTokenDisplay = new Label
+        {
+            Text = string.IsNullOrWhiteSpace(txtOAuthToken.Text) ? "" : new string('●', txtOAuthToken.Text.Length),
+            Left = txtOAuthToken.Left,
+            Top = txtOAuthToken.Top,
+            Width = txtOAuthToken.Width,
+            Height = txtOAuthToken.Height,
+            ForeColor = Color.LightGray,
+            BackColor = Color.Transparent,
+            BorderStyle = BorderStyle.None,  // ✅ Remove box
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+        this.Controls.Add(lblOAuthTokenDisplay);
+        lblOAuthTokenDisplay.BringToFront();
+
         btnGetToken = CreateButton("Get Token");
         btnGetToken.Top = currentTop;
-        btnGetToken.Left = marginLeft + 120; // << place left button at left margin
+        btnGetToken.Left = marginLeft;
         btnGetToken.Click += btnGetToken_Click;
 
         btnConnect = CreateButton("Connect");
         btnConnect.Top = currentTop;
-        btnConnect.Left = marginLeft + btnGetToken.Width + toggleGap + 120; // << right next to GetToken + a small gap
+        btnConnect.Left = btnGetToken.Right + toggleGap + 120;
         btnConnect.Click += btnConnect_Click;
 
-        currentTop += 45;
+        lblConnectionStatus = new Label
+        {
+            Text = "🔌", 
+            Top = btnConnect.Top + 8,
+            Left = btnConnect.Left - 32,
+            AutoSize = true,
+            ForeColor = Color.Red,
+            BackColor = Color.Transparent
+        };
+        this.Controls.Add(lblConnectionStatus);
+        lblConnectionStatus.BringToFront();
+
+        currentTop += 55;
         Label lblScripts = CreateLabel("Toggle Scripts");
 
         toggleAskAI = CreateToggle("AskAI", marginLeft);
@@ -359,7 +391,7 @@ public partial class MainForm : Form
             Left = marginLeft,
             Top = currentTop,
             Width = 440,
-            Height = 100,
+            Height = 128,
             Multiline = true,
             ReadOnly = true,
             ScrollBars = ScrollBars.Vertical,
@@ -369,17 +401,6 @@ public partial class MainForm : Form
         };
 
         currentTop += 110;
-        lblConnectionStatus = new Label
-        {
-            Text = "Disconnected",
-            Left = marginLeft,
-            Top = currentTop,
-            Width = 440,
-            Height = 30,
-            ForeColor = Color.Red,
-            BackColor = Color.Transparent,
-            TextAlign = ContentAlignment.MiddleCenter
-        };
 
         Controls.AddRange(new Control[]
         {
@@ -530,6 +551,10 @@ public partial class MainForm : Form
                     if (!string.IsNullOrWhiteSpace(token))
                     {
                         Invoke(new Action(() => txtOAuthToken.Text = token));
+                        Invoke(new Action(() => {
+                            txtOAuthToken.Text = token;
+                            lblOAuthTokenDisplay.Text = new string('●', token.Length);  // <- dynamic masking
+                        }));
                         Log("OAuth token captured successfully!");
                     }
                     else
@@ -649,7 +674,7 @@ public partial class MainForm : Form
         Invoke(new Action(() =>
         {
             Log("Connected to Twitch!");
-            lblConnectionStatus.Text = "Connected";
+            lblConnectionStatus.Text = "🔌";
             lblConnectionStatus.ForeColor = Color.Green;
             btnConnect.Text = "Disconnect";
             EnableAllToggles();
@@ -667,7 +692,7 @@ public partial class MainForm : Form
         Invoke(new Action(() =>
         {
             Log("Disconnected from Twitch.");
-            lblConnectionStatus.Text = "Disconnected";
+            lblConnectionStatus.Text = "🔌";
             lblConnectionStatus.ForeColor = Color.Red;
             btnConnect.Text = "Connect";
             DisableAllToggles();
