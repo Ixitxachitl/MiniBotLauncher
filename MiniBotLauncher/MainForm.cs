@@ -10,7 +10,10 @@ using TwitchLib.Client.Models;
 using TwitchLib.Client.Events;
 using TwitchLib.Communication.Events;
 using System.Reflection;
-
+public class FlatButton : Button
+{
+    protected override bool ShowFocusCues => false;
+}
 public partial class MainForm : Form
 {
     private TwitchClient client;
@@ -268,7 +271,7 @@ public partial class MainForm : Form
 
         Button CreateButton(string text)
         {
-            var button = new Button
+            var button = new FlatButton
             {
                 Text = text,
                 Left = inputLeft,
