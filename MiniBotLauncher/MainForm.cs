@@ -280,7 +280,8 @@ public partial class MainForm : Form
                 Height = 40,
                 BackColor = buttonColor,
                 ForeColor = foreColor,
-                FlatStyle = FlatStyle.Flat
+                FlatStyle = FlatStyle.Flat,
+                TabStop = false
             };
             button.FlatAppearance.BorderSize = 0;
             button.FlatAppearance.MouseOverBackColor = activeButtonColor;

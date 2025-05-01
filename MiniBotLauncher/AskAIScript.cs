@@ -29,7 +29,6 @@ public static class AskAIScript
                 max_tokens = 130,
                 messages = new[]
                 {
-                    new { role = "system", content = "You are a helpful Twitch Chatbot. Keep responses short and concise." },
                     new { role = "user", content = prompt }
                 }
             };
