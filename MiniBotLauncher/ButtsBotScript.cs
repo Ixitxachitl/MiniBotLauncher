@@ -98,12 +98,36 @@ public static class ButtsBotScript
         if (string.IsNullOrEmpty(find))
             return source;
 
-        return Regex.Replace(
-            source,
-            $@"\b{Regex.Escape(find)}\b",
-            replace,
-            RegexOptions.IgnoreCase
-        );
+        var sb = new System.Text.StringBuilder();
+        var wordBuffer = new List<char>();
+
+        for (int i = 0; i < source.Length; i++)
+        {
+            char c = source[i];
+
+            if (char.IsLetterOrDigit(c))
+            {
+                wordBuffer.Add(c);
+            }
+            else
+            {
+                FlushWord();
+                sb.Append(c); // Keep punctuation/whitespace
+            }
+        }
+
+        FlushWord(); // Handle last token
+        return sb.ToString();
+
+        void FlushWord()
+        {
+            if (wordBuffer.Count == 0) return;
+
+            string word = new string(wordBuffer.ToArray());
+            string replaced = string.Equals(word, find, StringComparison.OrdinalIgnoreCase) ? replace : word;
+            sb.Append(replaced);
+            wordBuffer.Clear();
+        }
     }
 
     private static string ExtractModelToTempFile(string resourceName)
