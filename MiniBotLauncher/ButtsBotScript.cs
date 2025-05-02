@@ -20,7 +20,7 @@ public static class ButtsBotScript
         if (message.TrimStart().StartsWith("!", StringComparison.Ordinal))
             return null;
 
-        if (rng.NextDouble() > 1)
+        if (rng.NextDouble() > 0.02)
         {
             await TryLog($"ButtsBot: Skipped message from {username} (no trigger).");
             return null;
