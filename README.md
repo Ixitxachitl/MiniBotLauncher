@@ -12,7 +12,7 @@ MiniBotLauncher is a lightweight, C#/.NET 8 Windows Forms application that conne
 * **AskAI**: Ask AI natural language questions
 * **Weather**: Get real-time weather info
 * **Translate**: Automatically Translate Non-English into English
-* **ButtsBot**: Replace words with "butt" or "butts" randomly for comedic effect
+* **ButtsBot**: Randomly replaces syllables in chat messages with "butt" for comedic effect
 * **ClapThatBot**: Generate funny "I'd clap that" responses
 * **MarkovChain**: Build a chat-based Markov brain and generate random sentences
 
@@ -40,7 +40,7 @@ MiniBotLauncher is a lightweight, C#/.NET 8 Windows Forms application that conne
 Optional:
 
 * Local GPT4All server running with the correct model (`llama3-8b-instruct`) for AskAI
-* No longer uses NLPCloud API — **ButtsBot** and **ClapThatBot** now use an embedded **OpenNLP GIS-format model** (`EnglishPOS.nbin`) for offline part-of-speech tagging.
+* No longer uses NLPCloud API — **ButtsBot** and **ClapThatBot** now use embedded offline models only.
 
 > If you're using POS tagging, make sure `System.Runtime.Caching` is available (install via NuGet if needed).
 
@@ -84,8 +84,8 @@ Optional:
 > **Important Notes:**
 >
 > * **AskAI** requires a local GPT4All server running with the correct model (`llama3-8b-instruct`).
-> * **ButtsBot** and **ClapThatBot** now work **fully offline** using the embedded OpenNLP `.nbin` POS model.
-> * The `.nbin` model must be embedded as a resource named `EnglishPOS.nbin`.
+> * **ButtsBot** uses the CMU Pronouncing Dictionary (CMUdict) to identify syllables and replace them with "butt" with a small random chance.
+> * CMUdict is embedded as a resource and used offline with no external dependencies.
 
 ---
 
@@ -96,7 +96,7 @@ Optional:
 | AskAI       | Answers natural language questions. Requires a local GPT4All server running the `llama3-8b-instruct` model. |
 | Weather     | Provides real-time weather based on city name.                                                              |
 | Translate   | Automatically translates non-English messages to English.                                                   |
-| ButtsBot    | Replaces adjectives or nouns with "butt"/"butts" using local POS tagging.                                   |
+| ButtsBot    | Replaces random syllables in user messages with "butt" using offline CMUdict-based syllable parsing.        |
 | ClapThatBot | Generates "I'd clap that" jokes from adjective+noun pairs using local POS tagging.                          |
 | MarkovChain | Learns from chat and generates fun, random sentences every 35 messages.                                     |
 
@@ -116,7 +116,8 @@ Optional:
 MIT License. Free for any personal or commercial use.
 
 OpenNLP is used for offline part-of-speech tagging and is licensed under the Apache License 2.0.
-See `/Resources/Models/LICENSE-OpenNLP.txt` for attribution.
+
+CMUdict is used for syllable parsing and distributed under a BSD-style license (included in the file header).
 
 ---
 
@@ -125,5 +126,6 @@ See `/Resources/Models/LICENSE-OpenNLP.txt` for attribution.
 * TwitchLib (chat connection)
 * Newtonsoft.Json (settings and Markov brain)
 * OpenNLP (offline POS tagging with legacy `.nbin` model)
+* CMUdict (syllable parsing)
 * GPT4All (local AI serving for AskAI)
 * Built by **Ixitxachitl**
