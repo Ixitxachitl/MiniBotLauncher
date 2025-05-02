@@ -38,6 +38,7 @@ public partial class MainForm : Form
 
     private NotifyIcon trayIcon;
     private ContextMenuStrip trayMenu;
+    private List<string> ignoredUsernames = new List<string>();
 
     // Stored event handlers for clean unsubscription
     private EventHandler<OnConnectedArgs> onConnected;
@@ -80,6 +81,26 @@ public partial class MainForm : Form
 
     private void AddTopRightButtons()
     {
+        Button btnIgnoreList = new Button
+        {
+            Text = "📄",
+            Size = new Size(30, 30),
+            Location = new Point(this.ClientSize.Width - 160, 10),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.Transparent,
+            ForeColor = Color.White
+        };
+        btnIgnoreList.FlatAppearance.BorderSize = 0;
+        btnIgnoreList.Click += (s, e) =>
+        {
+            var form = new IgnoreListForm(ignoredUsernames);
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                ignoredUsernames = form.GetIgnoredUsernames();
+                SaveSettings();
+            }
+        };
+
         btnPinTop = new Button
         {
             Text = "📌",
@@ -127,33 +148,41 @@ public partial class MainForm : Form
             Form infoForm = new Form
             {
                 Text = "About MiniBotLauncher",
-                Size = new Size(400, 180),
+                Size = new Size(400, 190),
                 StartPosition = FormStartPosition.CenterParent,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
                 MinimizeBox = false,
-                TopMost = true
+                TopMost = true,
+                BackColor = Color.FromArgb(30, 30, 30),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 10F)
             };
 
             var label = new Label
             {
                 Text = "v1.8.1 ©2025 Ixitxachitl",
                 AutoSize = true,
-                Location = new Point(20, 20)
+                Location = new Point(20, 20),
+                ForeColor = Color.White,
+                BackColor = Color.Transparent
             };
 
-            var attrabution = new Label
+            var attribution = new Label
             {
                 Text = "Includes Apache OpenNLP (Apache License 2.0)",
                 AutoSize = true,
-                Location = new Point(20, 35)
+                Location = new Point(20, 40),
+                ForeColor = Color.White,
+                BackColor = Color.Transparent
             };
 
             var link = new LinkLabel
             {
                 Text = "https://github.com/Ixitxachitl/MiniBotLauncher",
                 AutoSize = true,
-                Location = new Point(20, 50)
+                Location = new Point(20, 60),
+                LinkColor = Color.SteelBlue
             };
             link.LinkClicked += (ls, le) =>
             {
@@ -168,12 +197,20 @@ public partial class MainForm : Form
             {
                 Text = "OK",
                 DialogResult = DialogResult.OK,
-                Location = new Point(150, 100),
-                Width = 80
+                Location = new Point((infoForm.ClientSize.Width - 80) / 2, 100),
+                Width = 80,
+                Height = 40,
+                BackColor = Color.FromArgb(50, 50, 50),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Font = new Font("Segoe UI", 10F)
             };
+            okButton.FlatAppearance.BorderSize = 0;
+            okButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(70, 70, 70);
+            okButton.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, okButton.Width, okButton.Height, 10, 10));
 
             infoForm.Controls.Add(label);
-            infoForm.Controls.Add(attrabution);
+            infoForm.Controls.Add(attribution);
             infoForm.Controls.Add(link);
             infoForm.Controls.Add(okButton);
             infoForm.AcceptButton = okButton;
@@ -187,7 +224,9 @@ public partial class MainForm : Form
         this.Controls.Add(btnPinTop);
         this.Controls.Add(btnMinimizeTray);
         this.Controls.Add(btnInfo);
+        this.Controls.Add(btnIgnoreList);
         var tooltip = new ToolTip();
+        tooltip.SetToolTip(btnIgnoreList, "Manage Ignored Users");
         tooltip.SetToolTip(btnPinTop, "Pin on Top");
         tooltip.SetToolTip(btnMinimizeTray, "Minimize to Tray");
         tooltip.SetToolTip(btnInfo, "About");
@@ -738,6 +777,9 @@ public partial class MainForm : Form
             toggleButtsbot.Checked = settings.ButtsbotEnabled;
             toggleClapThat.Checked = settings.ClapThatEnabled;
             toggleMarkovChain.Checked = settings.MarkovChainEnabled;
+
+            if (settings.IgnoredUsernames != null)
+                ignoredUsernames = settings.IgnoredUsernames;
         }
     }
 
@@ -754,7 +796,8 @@ public partial class MainForm : Form
             TranslateEnabled = toggleTranslate.Checked,
             ButtsbotEnabled = toggleButtsbot.Checked,
             ClapThatEnabled = toggleClapThat.Checked,
-            MarkovChainEnabled = toggleMarkovChain.Checked
+            MarkovChainEnabled = toggleMarkovChain.Checked,
+            IgnoredUsernames = ignoredUsernames
         };
     
         try
@@ -867,7 +910,12 @@ public partial class MainForm : Form
     private async void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
     {
         string message = e.ChatMessage.Message;
-        string username = e.ChatMessage.Username;
+        string username = e.ChatMessage.Username.ToLowerInvariant();
+        if (ignoredUsernames.Contains(username))
+        {
+            Log($"Ignored message from {username}");
+            return;
+        }
         string channel = e.ChatMessage.Channel;
         string processedMessage = message;
 
@@ -966,6 +1014,7 @@ public partial class MainForm : Form
         public bool ButtsbotEnabled { get; set; }
         public bool ClapThatEnabled { get; set; }
         public bool MarkovChainEnabled { get; set; }
+        public List<string> IgnoredUsernames { get; set; } = new();
     }
 }
 
