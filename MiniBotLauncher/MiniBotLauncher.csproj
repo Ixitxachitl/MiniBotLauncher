@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <None Remove="MiniBotLauncher.ico" />
+    <None Remove="Resources\cmudict.0.7a" />
     <None Remove="Resources\Models\en-pos-maxent.bin" />
     <None Remove="Resources\Models\EnglishPOS.nbin" />
   </ItemGroup>
@@ -19,6 +20,7 @@
     <EmbeddedResource Include="MiniBotLauncher.ico">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="Resources\cmudict.0.7a" />
     <EmbeddedResource Include="Resources\Models\EnglishPOS.nbin" />
   </ItemGroup>
 

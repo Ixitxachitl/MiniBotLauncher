@@ -2,15 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text.RegularExpressions;
+using System.Text;
 using System.Threading.Tasks;
-using OpenNLP.Tools.PosTagger;
-using OpenNLP.Tools.Tokenize;
 
 public static class ButtsBotScript
 {
     private static readonly Random rng = new Random();
+    private static readonly CMUDict cmu = new CMUDict();
 
     public static Func<string, Task> DebugLog = null;
 
@@ -28,35 +26,12 @@ public static class ButtsBotScript
             return null;
         }
 
-        await TryLog($"ButtsBot: Attempting to replace a word in message: \"{message}\"");
+        await TryLog($"ButtsBot: Attempting syllable-based replacement on message: \"{message}\"");
 
         try
         {
-            var (candidates, tagMap) = AnalyzeTextLocal(message);
-
-            if (candidates == null || candidates.Count == 0)
-            {
-                await TryLog("ButtsBot: No nouns or adjectives found.");
-                return null;
-            }
-
-            string wordToReplace = candidates[rng.Next(candidates.Count)];
-            string tag = tagMap[wordToReplace];
-
-            // Skip replacement if word is only punctuation/symbols
-            if (!Regex.IsMatch(wordToReplace, @"[a-zA-Z0-9]"))
-            {
-                await TryLog($"ButtsBot: Skipped symbol-like token: \"{wordToReplace}\"");
-                return null;
-            }
-
-            await TryLog($"ButtsBot: Selected \"{wordToReplace}\" (tag {tag})");
-
-            string replacement = (tag == "NNS" || tag == "NNPS") ? "butts" : "butt";
-
-            string funnyText = ReplaceAllOccurrences(message, wordToReplace, replacement);
+            string funnyText = await ReplaceSyllablesWithButt(message, 0.05);
             await TryLog($"ButtsBot: Final funny message: \"{funnyText}\"");
-
             return funnyText;
         }
         catch (Exception ex)
@@ -66,84 +41,67 @@ public static class ButtsBotScript
         }
     }
 
-    private static (List<string>, Dictionary<string, string>) AnalyzeTextLocal(string text)
+    private static async Task<string> ReplaceSyllablesWithButt(string input, double replacementChance)
     {
-        string modelPath = ExtractModelToTempFile("EnglishPOS.nbin");
-        DebugLog?.Invoke($"ButtsBot: Loading POS model from: {modelPath}");
+        bool anyReplaced = false;
+        var tokens = TokenizePreservingFormat(input);
+        var modifiedTokens = new List<string>();
 
-        var tokenizer = new EnglishRuleBasedTokenizer(false);
-        var tagger = new EnglishMaximumEntropyPosTagger(modelPath);
-
-        var tokens = tokenizer.Tokenize(text);
-        var tags = tagger.Tag(tokens);
-
-        var candidates = new List<string>();
-        var tagMap = new Dictionary<string, string>();
-
-        for (int i = 0; i < tokens.Length; i++)
+        foreach (var token in tokens)
         {
-            string tag = tags[i];
-            if (tag.StartsWith("NN") || tag.StartsWith("JJ"))
+            if (token.Any(char.IsLetter))
             {
-                candidates.Add(tokens[i]);
-                tagMap[tokens[i]] = tag;
-            }
-        }
+                var syllables = cmu.GetSyllables(token);
 
-        return (candidates, tagMap);
-    }
+                if (syllables.Count == 1 && syllables[0] == token)
+                {
+                    await TryLog($"ButtsBot: Using heuristic split for unknown word '{token}'.");
+                    syllables = HeuristicSyllableSplit(token);
+                }
 
-    private static string ReplaceAllOccurrences(string source, string find, string replace)
-    {
-        if (string.IsNullOrEmpty(find))
-            return source;
+                for (int i = 0; i < syllables.Count; i++)
+                {
+                    if (rng.NextDouble() < replacementChance)
+                    {
+                        syllables[i] = "butt";
+                        anyReplaced = true;
+                    }
+                }
 
-        var sb = new System.Text.StringBuilder();
-        var wordBuffer = new List<char>();
-
-        for (int i = 0; i < source.Length; i++)
-        {
-            char c = source[i];
-
-            if (char.IsLetterOrDigit(c))
-            {
-                wordBuffer.Add(c);
+                string rebuilt = RebuildWordFromOriginal(token, syllables);
+                modifiedTokens.Add(rebuilt);
             }
             else
             {
-                FlushWord();
-                sb.Append(c); // Keep punctuation/whitespace
+                modifiedTokens.Add(token);
             }
         }
 
-        FlushWord(); // Handle last token
-        return sb.ToString();
-
-        void FlushWord()
-        {
-            if (wordBuffer.Count == 0) return;
-
-            string word = new string(wordBuffer.ToArray());
-            string replaced = string.Equals(word, find, StringComparison.OrdinalIgnoreCase) ? replace : word;
-            sb.Append(replaced);
-            wordBuffer.Clear();
-        }
+        return anyReplaced ? string.Join("", modifiedTokens) : null;
     }
 
-    private static string ExtractModelToTempFile(string resourceName)
+    private static List<string> HeuristicSyllableSplit(string word)
     {
-        var assembly = Assembly.GetExecutingAssembly();
-        var fullName = assembly.GetManifestResourceNames()
-            .FirstOrDefault(r => r.EndsWith(resourceName, StringComparison.OrdinalIgnoreCase));
+        var syllables = new List<string>();
+        var current = new StringBuilder();
+        string vowels = "aeiouy";
+        word = word.ToLower();
 
-        if (fullName == null)
-            throw new Exception($"Embedded resource {resourceName} not found.");
+        for (int i = 0; i < word.Length; i++)
+        {
+            current.Append(word[i]);
 
-        string tempPath = Path.GetTempFileName();
-        using var input = assembly.GetManifestResourceStream(fullName);
-        using var output = new FileStream(tempPath, FileMode.Create, FileAccess.Write);
-        input.CopyTo(output);
-        return tempPath;
+            if (i < word.Length - 1 && vowels.Contains(word[i]) && !vowels.Contains(word[i + 1]))
+            {
+                syllables.Add(current.ToString());
+                current.Clear();
+            }
+        }
+
+        if (current.Length > 0)
+            syllables.Add(current.ToString());
+
+        return syllables;
     }
 
     private static async Task TryLog(string message)
@@ -151,5 +109,163 @@ public static class ButtsBotScript
         if (DebugLog != null)
             await DebugLog.Invoke(message);
     }
+
+    private static List<string> TokenizePreservingFormat(string input)
+    {
+        var tokens = new List<string>();
+        var current = new StringBuilder();
+        bool? isWord = null;
+
+        foreach (char c in input)
+        {
+            bool isCurrentLetterOrDigit = char.IsLetterOrDigit(c);
+
+            if (isWord == null)
+            {
+                isWord = isCurrentLetterOrDigit;
+                current.Append(c);
+            }
+            else if (isCurrentLetterOrDigit == isWord)
+            {
+                current.Append(c);
+            }
+            else
+            {
+                tokens.Add(current.ToString());
+                current.Clear();
+                current.Append(c);
+                isWord = isCurrentLetterOrDigit;
+            }
+        }
+
+        if (current.Length > 0)
+            tokens.Add(current.ToString());
+
+        return tokens;
+    }
+
+    private static string RebuildWordFromOriginal(string original, List<string> newSyllables)
+    {
+        if (string.IsNullOrEmpty(original) || newSyllables.Count == 0)
+            return original;
+
+        var rebuilt = new StringBuilder();
+        int originalIndex = 0;
+
+        foreach (var syllable in newSyllables)
+        {
+            int copyLen = Math.Min(syllable.Length, original.Length - originalIndex);
+            string replacement = syllable;
+
+            if (copyLen > 0)
+            {
+                var originalSegment = original.Substring(originalIndex, copyLen);
+                var formatted = new StringBuilder();
+
+                for (int i = 0; i < replacement.Length; i++)
+                {
+                    if (i < originalSegment.Length)
+                    {
+                        formatted.Append(char.IsUpper(originalSegment[i]) ? char.ToUpper(replacement[i]) : char.ToLower(replacement[i]));
+                    }
+                    else
+                    {
+                        formatted.Append(replacement[i]);
+                    }
+                }
+
+                replacement = formatted.ToString();
+            }
+
+            rebuilt.Append(replacement);
+            originalIndex += copyLen;
+        }
+
+        return rebuilt.ToString();
+    }
 }
 
+public class CMUDict
+{
+    // CMU Pronouncing Dictionary (cmudict.0.7a) © Carnegie Mellon University.
+    // Included under a BSD-style license — see cmudict.0.7a for details.
+
+    private readonly string ResourceName;
+    private Dictionary<string, List<string>> wordToPhonemes = new();
+
+    private static readonly HashSet<string> VowelPhonemes = new()
+    {
+        "AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY",
+        "IH", "IY", "OW", "OY", "UH", "UW"
+    };
+
+    public CMUDict()
+    {
+        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+        ResourceName = assembly.GetManifestResourceNames()
+            .FirstOrDefault(r => r.EndsWith("cmudict.0.7a", StringComparison.OrdinalIgnoreCase))
+            ?? throw new FileNotFoundException("Embedded CMUdict resource not found.");
+
+        using var stream = assembly.GetManifestResourceStream(ResourceName);
+        if (stream == null)
+            throw new FileNotFoundException($"Embedded resource '{ResourceName}' could not be loaded.");
+
+        using var reader = new StreamReader(stream);
+        string? line;
+        while ((line = reader.ReadLine()) != null)
+        {
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith(";;;")) continue;
+
+            var split = line.Split("  ");
+            if (split.Length != 2) continue;
+
+            var word = split[0].ToLower().Trim();
+            var phonemes = split[1].Trim().Split(' ').ToList();
+
+            word = word.Contains('(') ? word[..word.IndexOf('(')] : word;
+
+            if (!wordToPhonemes.ContainsKey(word))
+                wordToPhonemes[word] = phonemes;
+        }
+    }
+
+    public List<string> GetSyllables(string word)
+    {
+        int count = GetSyllableCount(word);
+        return SplitTextIntoSyllables(word, count);
+    }
+
+    public int GetSyllableCount(string word)
+    {
+        word = word.ToLower();
+        if (!wordToPhonemes.TryGetValue(word, out var phonemes))
+            return 1;
+
+        return phonemes.Count(p => IsVowel(p));
+    }
+
+    private List<string> SplitTextIntoSyllables(string word, int syllableCount)
+    {
+        if (syllableCount <= 1 || word.Length <= syllableCount)
+            return new List<string> { word };
+
+        var syllables = new List<string>();
+        int baseLen = word.Length / syllableCount;
+        int remainder = word.Length % syllableCount;
+        int index = 0;
+
+        for (int i = 0; i < syllableCount; i++)
+        {
+            int len = baseLen + (i < remainder ? 1 : 0);
+            syllables.Add(word.Substring(index, len));
+            index += len;
+        }
+
+        return syllables;
+    }
+
+    private bool IsVowel(string phoneme)
+    {
+        return VowelPhonemes.Any(v => phoneme.StartsWith(v));
+    }
+}

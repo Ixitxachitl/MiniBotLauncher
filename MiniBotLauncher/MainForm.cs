@@ -168,7 +168,7 @@ public partial class MainForm : Form
 
             var label = new Label
             {
-                Text = "v1.9 ©2025 Ixitxachitl",
+                Text = "v2.0 ©2025 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20),
                 ForeColor = Color.White,
