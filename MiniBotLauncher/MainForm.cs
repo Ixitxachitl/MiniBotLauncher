@@ -93,12 +93,19 @@ public partial class MainForm : Form
         btnIgnoreList.FlatAppearance.BorderSize = 0;
         btnIgnoreList.Click += (s, e) =>
         {
+            bool wasTopMost = this.TopMost;
+            this.TopMost = false;
+            this.SendToBack(); // 💡 refresh Z-order
+
             var form = new IgnoreListForm(ignoredUsernames);
-            if (form.ShowDialog() == DialogResult.OK)
+            if (form.ShowDialog(this) == DialogResult.OK)
             {
                 ignoredUsernames = form.GetIgnoredUsernames();
                 SaveSettings();
             }
+
+            this.TopMost = wasTopMost;
+            this.BringToFront();
         };
 
         btnPinTop = new Button
