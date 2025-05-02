@@ -174,7 +174,7 @@ public partial class MainForm : Form
 
             var label = new Label
             {
-                Text = "v1.8 ©2025 Ixitxachitl",
+                Text = "v1.8.1 ©2025 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20)
             };
