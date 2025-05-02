@@ -10,6 +10,12 @@ using OpenNLP.Tools.Tokenize;
 public static class ClapThatBotScript
 {
     private static readonly Random rng = new Random();
+    private static int replyChancePercent = 2;
+
+    public static void SetReplyChance(int percent)
+    {
+        replyChancePercent = Math.Clamp(percent, 1, 100);
+    }
 
     public static Func<string, Task> DebugLog = null;
 
@@ -21,7 +27,7 @@ public static class ClapThatBotScript
         if (message.TrimStart().StartsWith("!", StringComparison.Ordinal))
             return null;
 
-        if (rng.NextDouble() > 0.02)
+        if (rng.Next(100) >= replyChancePercent)
         {
             await TryLog($"ClapThatBot: Skipped message from {username} (no trigger).");
             return null;
@@ -78,7 +84,6 @@ public static class ClapThatBotScript
 
         return (null, null, false);
     }
-
 
     private static string ExtractModelToTempFile(string resourceName)
     {

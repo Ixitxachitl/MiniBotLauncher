@@ -15,6 +15,12 @@ public static class MarkovChainScript
         "markov_brain.json"
     );
 
+    public static void ResetCounter()
+    {
+        messageCounter = 0;
+        transitions.Clear();
+    }
+
     public static string LearnAndMaybeRespond(string message, string username, string botUsername)
     {
         if (string.IsNullOrWhiteSpace(message) || string.IsNullOrWhiteSpace(username))

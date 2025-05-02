@@ -52,6 +52,7 @@ public partial class MainForm : Form
     private Button btnMinimizeTray;
     private Button btnInfo;
 
+    private SettingsData settings = new SettingsData();
     public MainForm()
     {
         InitializeComponent();
@@ -63,6 +64,17 @@ public partial class MainForm : Form
             this.Icon = new Icon(stream);
         }
         LoadSettings();
+
+        AskAIScript.SetConfig(
+            settings.AskAI_ModelName,
+            settings.AskAI_MaxTokens,
+            settings.AskAI_SystemMessage
+        );
+        WeatherScript.SetFormat(settings.Weather_FormatString);
+        TranslateScript.SetTargetLanguage(settings.Translate_TargetLanguage);
+        ButtsBotScript.SetReplyChance(settings.ButtsBot_ReplyChancePercent);
+        ClapThatBotScript.SetReplyChance(settings.ClapThat_ReplyChancePercent);
+
         lblOAuthTokenDisplay.Text = string.IsNullOrWhiteSpace(txtOAuthToken.Text)
             ? ""
             : new string('●', txtOAuthToken.Text.Length);
@@ -168,7 +180,7 @@ public partial class MainForm : Form
 
             var label = new Label
             {
-                Text = "v2.0 ©2025 Ixitxachitl",
+                Text = "v2.1 ©2025 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20),
                 ForeColor = Color.White,
@@ -434,13 +446,285 @@ public partial class MainForm : Form
         Label lblScripts = CreateLabel("Toggle Scripts");
 
         toggleAskAI = CreateToggle("AskAI", marginLeft);
+        toggleAskAI.Width -= 35; // Make it narrower to fit the new button
+
+        // Restore rounded corners (both sides) on narrower toggle
+        toggleAskAI.Region = Region.FromHrgn(CreateRoundRectRgn(
+            0, 0, toggleAskAI.Width, toggleAskAI.Height, 10, 10));
+
+        Button btnSettings = new Button
+        {
+            Text = "⚙️",
+            Size = new Size(30, 30),
+            Location = new Point(toggleAskAI.Right + 5, toggleAskAI.Top + 3),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.Transparent,
+            ForeColor = Color.White
+        };
+        btnSettings.FlatAppearance.BorderSize = 0;
+        btnSettings.Click += (s, e) =>
+        {
+            bool wasTopMost = this.TopMost;
+            this.TopMost = false;
+            this.SendToBack();
+
+            var form = new AskAISettingsForm(settings);
+            if (form.ShowDialog(this) == DialogResult.OK)
+            {
+                SaveSettings();
+            }
+
+            AskAIScript.SetConfig(
+                settings.AskAI_ModelName,
+                settings.AskAI_MaxTokens,
+                settings.AskAI_SystemMessage
+            );
+
+            this.TopMost = wasTopMost;
+            this.BringToFront();
+        };
+        this.Controls.Add(btnSettings);
+
         toggleWeather = CreateToggle("Weather", marginLeft + toggleWidth + toggleGap);
+        toggleWeather.Width -= 35; // Make it narrower to fit the new button
+
+        // Restore rounded corners (both sides) on narrower toggle
+        toggleWeather.Region = Region.FromHrgn(CreateRoundRectRgn(
+            0, 0, toggleWeather.Width, toggleWeather.Height, 10, 10));
+
+        Button btnWeatherSettings = new Button
+        {
+            Text = "⚙️",
+            Size = new Size(30, 30),
+            Location = new Point(toggleWeather.Right + 5, toggleWeather.Top + 3),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.Transparent,
+            ForeColor = Color.White
+        };
+        btnWeatherSettings.FlatAppearance.BorderSize = 0;
+        btnWeatherSettings.Click += (s, e) =>
+        {
+            bool wasTopMost = this.TopMost;
+            this.TopMost = false;
+            this.SendToBack();
+
+            var form = new WeatherSettingsForm(settings);
+            if (form.ShowDialog(this) == DialogResult.OK)
+            {
+                SaveSettings();
+                WeatherScript.SetFormat(settings.Weather_FormatString);
+            }
+
+            this.TopMost = wasTopMost;
+            this.BringToFront();
+        };
+
+        this.Controls.Add(btnWeatherSettings);
+
         currentTop += 40;
         toggleTranslate = CreateToggle("Translate", marginLeft);
+        toggleTranslate.Width -= 35; // Make it narrower to fit the new button
+
+        // Restore rounded corners (both sides) on narrower toggle
+        toggleTranslate.Region = Region.FromHrgn(CreateRoundRectRgn(
+            0, 0, toggleTranslate.Width, toggleTranslate.Height, 10, 10));
+
+        Button btnTranslateSettings = new Button
+        {
+            Text = "⚙️",
+            Size = new Size(30, 30),
+            Location = new Point(toggleTranslate.Right + 5, toggleTranslate.Top + 3),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.Transparent,
+            ForeColor = Color.White
+        };
+        btnTranslateSettings.FlatAppearance.BorderSize = 0;
+        btnTranslateSettings.Click += (s, e) =>
+        {
+            bool wasTopMost = this.TopMost;
+            this.TopMost = false;
+            this.SendToBack();
+
+            var form = new TranslateSettingsForm(settings);
+            if (form.ShowDialog(this) == DialogResult.OK)
+            {
+                SaveSettings();
+                TranslateScript.SetTargetLanguage(settings.Translate_TargetLanguage);
+            }
+
+            this.TopMost = wasTopMost;
+            this.BringToFront();
+        };
+        this.Controls.Add(btnTranslateSettings);
+
         toggleButtsbot = CreateToggle("Buttsbot", marginLeft + toggleWidth + toggleGap);
+        toggleButtsbot.Width -= 35; // Make it narrower to fit the new button
+
+        // Restore rounded corners (both sides) on narrower toggle
+        toggleButtsbot.Region = Region.FromHrgn(CreateRoundRectRgn(
+            0, 0, toggleButtsbot.Width, toggleButtsbot.Height, 10, 10));
+
+        Button btnButtsbotSettings = new Button
+        {
+            Text = "⚙️",
+            Size = new Size(30, 30),
+            Location = new Point(toggleButtsbot.Right + 5, toggleButtsbot.Top + 3),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.Transparent,
+            ForeColor = Color.White
+        };
+        btnButtsbotSettings.FlatAppearance.BorderSize = 0;
+        btnButtsbotSettings.Click += (s, e) =>
+        {
+            bool wasTopMost = this.TopMost;
+            this.TopMost = false;
+            this.SendToBack();
+
+            var form = new ButtsBotSettingsForm(settings);
+            if (form.ShowDialog(this) == DialogResult.OK)
+            {
+                SaveSettings();
+                ButtsBotScript.SetReplyChance(settings.ButtsBot_ReplyChancePercent);
+            }
+
+            this.TopMost = wasTopMost;
+            this.BringToFront();
+        };
+        this.Controls.Add(btnButtsbotSettings);
+
         currentTop += 40;
         toggleClapThat = CreateToggle("ClapThat", marginLeft);
+        toggleClapThat.Width -= 35; // Make it narrower to fit the new button
+
+        // Restore rounded corners (both sides) on narrower toggle
+        toggleClapThat.Region = Region.FromHrgn(CreateRoundRectRgn(
+            0, 0, toggleClapThat.Width, toggleClapThat.Height, 10, 10));
+        Button btnClapthatSettings = new Button
+        {
+            Text = "⚙️",
+            Size = new Size(30, 30),
+            Location = new Point(toggleClapThat.Right + 5, toggleClapThat.Top + 3),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.Transparent,
+            ForeColor = Color.White
+        };
+        btnClapthatSettings.FlatAppearance.BorderSize = 0;
+        btnClapthatSettings.Click += (s, e) =>
+        {
+            bool wasTopMost = this.TopMost;
+            this.TopMost = false;
+            this.SendToBack();
+
+            var form = new ClapThatSettingsForm(settings);
+            if (form.ShowDialog(this) == DialogResult.OK)
+            {
+                SaveSettings();
+                ClapThatBotScript.SetReplyChance(settings.ClapThat_ReplyChancePercent);
+            }
+
+            this.TopMost = wasTopMost;
+            this.BringToFront();
+        };
+        this.Controls.Add(btnClapthatSettings);
+
         toggleMarkovChain = CreateToggle("MarkovChain", marginLeft + toggleWidth + toggleGap);
+        toggleMarkovChain.Width -= 35; // Adjust for settings icon
+        toggleMarkovChain.Region = Region.FromHrgn(CreateRoundRectRgn(
+            0, 0, toggleMarkovChain.Width, toggleMarkovChain.Height, 10, 10));
+
+        Button btnMarkovSettings = new Button
+        {
+            Text = "⚙️",
+            Size = new Size(30, 30),
+            Location = new Point(toggleMarkovChain.Right + 5, toggleMarkovChain.Top + 3),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.Transparent,
+            ForeColor = Color.White
+        };
+        btnMarkovSettings.FlatAppearance.BorderSize = 0;
+
+        btnMarkovSettings.Click += (s, e) =>
+        {
+            bool wasTopMost = this.TopMost;
+            this.TopMost = false;
+            this.SendToBack();
+
+            var dialog = new Form()
+            {
+                Text = "Reset Markov Brain",
+                Size = new Size(360, 160),
+                StartPosition = FormStartPosition.CenterParent,
+                BackColor = Color.FromArgb(30, 30, 30),
+                ForeColor = Color.White,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+
+            Label lbl = new Label()
+            {
+                Text = "Reset Markov brain file? This cannot be undone.",
+                AutoSize = true,
+                Location = new Point(20, 20),
+                ForeColor = Color.White
+            };
+
+            Button btnOK = new Button()
+            {
+                Text = "OK",
+                DialogResult = DialogResult.OK,
+                Location = new Point(60, 70),
+                Size = new Size(100, 35),
+                BackColor = Color.FromArgb(50, 50, 50),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            btnOK.FlatAppearance.BorderSize = 0;
+            btnOK.FlatAppearance.MouseOverBackColor = Color.FromArgb(70, 70, 70);
+            btnOK.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnOK.Width, btnOK.Height, 10, 10));
+
+            Button btnCancel = new Button()
+            {
+                Text = "Cancel",
+                DialogResult = DialogResult.Cancel,
+                Location = new Point(180, 70),
+                Size = new Size(100, 35),
+                BackColor = Color.FromArgb(50, 50, 50),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat
+            };
+            btnCancel.FlatAppearance.BorderSize = 0;
+            btnCancel.FlatAppearance.MouseOverBackColor = Color.FromArgb(70, 70, 70);
+            btnCancel.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnCancel.Width, btnCancel.Height, 10, 10));
+
+            dialog.Controls.AddRange(new Control[] { lbl, btnOK, btnCancel });
+
+            if (dialog.ShowDialog(this) == DialogResult.OK)
+            {
+                string brainFile = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "MiniBot",
+                    "markov_brain.json");
+                try
+                {
+                    if (File.Exists(brainFile))
+                    {
+                        File.Delete(brainFile);
+                        MarkovChainScript.ResetCounter();
+                    }
+                    Log("Markov brain reset successfully.");
+                }
+                catch (Exception ex)
+                {
+                    Log($"Failed to reset Markov brain: {ex.Message}");
+                }
+            }
+
+            this.TopMost = wasTopMost;
+            this.BringToFront();
+        };
+
+        this.Controls.Add(btnMarkovSettings);
 
         currentTop += 55;
         txtStatusLog = new TextBox
@@ -679,23 +963,6 @@ public partial class MainForm : Form
         Log("Attempting to connect to Twitch...");
     }
 
-    private void RegisterClientEvents()
-    {
-        onConnected = Client_OnConnected;
-        onDisconnected = Client_OnDisconnected;
-        onConnectionError = (s, e) => Log($"Connection error: {e.Error.Message}");
-        onError = (s, e) => Log($"Client error: {e.Exception.Message}");
-        onLog = (s, e) => Log(e.Data);
-        onMessageReceived = Client_OnMessageReceived;
-
-        client.OnConnected += onConnected;
-        client.OnDisconnected += onDisconnected;
-        client.OnConnectionError += onConnectionError;
-        client.OnError += onError;
-        client.OnLog += onLog;
-        client.OnMessageReceived += onMessageReceived;
-    }
-
     private void CleanupClient()
     {
         if (client == null)
@@ -781,7 +1048,7 @@ public partial class MainForm : Form
         if (File.Exists(SettingsFile))
         {
             string json = File.ReadAllText(SettingsFile);
-            var settings = JsonSerializer.Deserialize<SettingsData>(json);
+            settings = JsonSerializer.Deserialize<SettingsData>(json);
 
             txtBotUsername.Text = settings.BotUsername;
             txtClientID.Text = settings.ClientID;
@@ -802,21 +1069,19 @@ public partial class MainForm : Form
 
     private void SaveSettings()
     {
-        var settings = new SettingsData
-        {
-            BotUsername = txtBotUsername.Text,
-            ClientID = txtClientID.Text,
-            OAuthToken = txtOAuthToken.Text,
-            ChannelName = txtChannelName.Text,
-            AskAIEnabled = toggleAskAI.Checked,
-            WeatherEnabled = toggleWeather.Checked,
-            TranslateEnabled = toggleTranslate.Checked,
-            ButtsbotEnabled = toggleButtsbot.Checked,
-            ClapThatEnabled = toggleClapThat.Checked,
-            MarkovChainEnabled = toggleMarkovChain.Checked,
-            IgnoredUsernames = ignoredUsernames
-        };
-    
+        // Just update the existing instance
+        settings.BotUsername = txtBotUsername.Text;
+        settings.ClientID = txtClientID.Text;
+        settings.OAuthToken = txtOAuthToken.Text;
+        settings.ChannelName = txtChannelName.Text;
+        settings.AskAIEnabled = toggleAskAI.Checked;
+        settings.WeatherEnabled = toggleWeather.Checked;
+        settings.TranslateEnabled = toggleTranslate.Checked;
+        settings.ButtsbotEnabled = toggleButtsbot.Checked;
+        settings.ClapThatEnabled = toggleClapThat.Checked;
+        settings.MarkovChainEnabled = toggleMarkovChain.Checked;
+        settings.IgnoredUsernames = ignoredUsernames;
+
         try
         {
             string directory = Path.GetDirectoryName(SettingsFile);
@@ -824,7 +1089,7 @@ public partial class MainForm : Form
             {
                 Directory.CreateDirectory(directory);
             }
-    
+
             string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(SettingsFile, json);
         }
@@ -977,7 +1242,7 @@ public partial class MainForm : Form
 
         if (toggleButtsbot.Checked)
         {
-            string buttsMessage = await ButtsBotScript.Process(message, username, txtBotUsername.Text);
+            string buttsMessage = await ButtsBotScript.Process(message, username);
             if (!string.IsNullOrWhiteSpace(buttsMessage))
             {
                 client.SendMessage(channel, buttsMessage);
@@ -1017,21 +1282,6 @@ public partial class MainForm : Form
         {
             client.SendMessage(channel, processedMessage);
         }
-    }
-
-    private class SettingsData
-    {
-        public string BotUsername { get; set; }
-        public string ClientID { get; set; }
-        public string OAuthToken { get; set; }
-        public string ChannelName { get; set; }
-        public bool AskAIEnabled { get; set; }
-        public bool WeatherEnabled { get; set; }
-        public bool TranslateEnabled { get; set; }
-        public bool ButtsbotEnabled { get; set; }
-        public bool ClapThatEnabled { get; set; }
-        public bool MarkovChainEnabled { get; set; }
-        public List<string> IgnoredUsernames { get; set; } = new();
     }
 }
 

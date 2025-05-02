@@ -11,6 +11,28 @@ public static class TranslateScript
 
     public static Func<string, Task> DebugLog = null;
 
+    private static string targetLanguage = "en";
+
+    private static readonly Dictionary<string, string> TranslatedFromTemplates = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "en", "Translated from {0}" },
+        { "es", "Traducido del {0}" },
+        { "fr", "Traduit du {0}" },
+        { "de", "Übersetzt aus dem {0}" },
+        { "it", "Tradotto da {0}" },
+        { "pt", "Traduzido de {0}" },
+        { "ja", "{0} からの翻訳" },
+        { "ko", "{0}에서 번역됨" },
+        { "zh-cn", "翻译自{0}" },
+        { "zh-tw", "翻譯自{0}" },
+        { "ru", "Переведено с {0}" }
+    };
+
+    public static void SetTargetLanguage(string lang)
+    {
+        targetLanguage = string.IsNullOrWhiteSpace(lang) ? "en" : lang;
+    }
+
     public static async Task<string> TryTranslate(string inputText, string username)
     {
         if (string.IsNullOrWhiteSpace(inputText))
@@ -55,19 +77,19 @@ public static class TranslateScript
         string cleanedInput = CleanTextForComparison(inputText);
         string cleanedTranslation = CleanTextForComparison(translatedText);
 
+        if (!forced && string.Equals(sourceLang, targetLanguage, StringComparison.OrdinalIgnoreCase))
+        {
+            await TryLog($"TranslateScript: Source language matches target '{targetLanguage}'. Skipping.");
+            return null;
+        }
+
         if (cleanedInput.Equals(cleanedTranslation, StringComparison.OrdinalIgnoreCase))
         {
             await TryLog("TranslateScript: Cleaned translation equals input. Skipping.");
             return null;
         }
 
-        if (!forced && sourceLang == "en")
-        {
-            await TryLog("TranslateScript: Source language is English. Skipping.");
-            return null;
-        }
-
-        var trustedLatinLangs = new HashSet<string> { "es", "it", "pt", "de", "fr", "nl", "ro", "pl", "sv", "no", "da" };
+        var trustedLatinLangs = new HashSet<string> { "en", "es", "it", "pt", "de", "fr", "nl", "ro", "pl", "sv", "no", "da" };
 
         if (IsLatinAlphabet(inputText) && !trustedLatinLangs.Contains(sourceLang))
         {
@@ -76,7 +98,12 @@ public static class TranslateScript
         }
 
         string fullLanguageName = GetLanguageDisplayName(sourceLang);
-        string result = $"[Translated from {fullLanguageName}] {username}: {translatedText}";
+
+        string template = TranslatedFromTemplates.TryGetValue(targetLanguage, out var t)
+            ? t : TranslatedFromTemplates["en"];
+
+        string prefix = string.Format(template, fullLanguageName);
+        string result = $"[{prefix}] {username}: {translatedText}";
 
         await TryLog($"TranslateScript: Returning translation: {result}");
 
@@ -91,7 +118,7 @@ public static class TranslateScript
         try
         {
             string slParam = forcedSourceLang ?? "auto";
-            string url = $"https://translate.googleapis.com/translate_a/single?client=gtx&sl={slParam}&tl=en&dt=t&q={Uri.EscapeDataString(text)}";
+            string url = $"https://translate.googleapis.com/translate_a/single?client=gtx&sl={slParam}&tl={targetLanguage}&dt=t&q={Uri.EscapeDataString(text)}";
 
             client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0");
             string response = await client.GetStringAsync(url);
@@ -205,4 +232,3 @@ public static class TranslateScript
         return new string(cleanedChars.ToArray()).Trim();
     }
 }
-

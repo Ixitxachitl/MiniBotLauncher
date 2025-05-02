@@ -8,6 +8,13 @@ public static class WeatherScript
 
     public static Func<string, Task> DebugLog = null;
 
+    private static string formatString = "2";
+
+    public static void SetFormat(string format)
+    {
+        formatString = string.IsNullOrWhiteSpace(format) ? "2" : format;
+    }
+
     public static async Task<string> GetWeather(string city)
     {
         if (string.IsNullOrWhiteSpace(city))
@@ -18,7 +25,7 @@ public static class WeatherScript
 
         try
         {
-            string url = $"https://wttr.in/{Uri.EscapeDataString(city)}?format=3";
+            string url = $"https://wttr.in/{Uri.EscapeDataString(city)}?format={Uri.EscapeDataString(formatString)}";
             httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("MiniBotLauncher/1.0");
 
             await TryLog($"WeatherScript: Requesting weather for {city}");
@@ -28,7 +35,7 @@ public static class WeatherScript
             if (!string.IsNullOrWhiteSpace(weather))
             {
                 await TryLog($"WeatherScript: Received response: {weather}");
-                return $"Weather for {weather}";
+                return $"Weather for {city}: {weather}";
             }
             else
             {

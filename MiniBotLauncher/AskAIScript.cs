@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,6 +11,17 @@ public static class AskAIScript
     private static readonly string gptServerUrl = "http://localhost:4891/v1/chat/completions";
 
     public static Func<string, Task> DebugLog = null;
+
+    private static string modelName = "llama3-8b-instruct";
+    private static int maxTokens = 130;
+    private static string systemMessage = "";
+
+    public static void SetConfig(string model, int tokens, string systemMsg)
+    {
+        modelName = string.IsNullOrWhiteSpace(model) ? "llama3-8b-instruct" : model;
+        maxTokens = Math.Max(1, Math.Min(255, tokens));
+        systemMessage = systemMsg ?? "";
+    }
 
     public static async Task<string> GetResponse(string prompt)
     {
@@ -23,14 +35,20 @@ public static class AskAIScript
 
         try
         {
+            var messages = new List<object>();
+
+            if (!string.IsNullOrWhiteSpace(systemMessage))
+            {
+                messages.Add(new { role = "system", content = systemMessage });
+            }
+
+            messages.Add(new { role = "user", content = prompt });
+
             var payload = new
             {
-                model = "llama3-8b-instruct",
-                max_tokens = 130,
-                messages = new[]
-                {
-                    new { role = "user", content = prompt }
-                }
+                model = modelName,
+                max_tokens = maxTokens,
+                messages = messages
             };
 
             string json = Newtonsoft.Json.JsonConvert.SerializeObject(payload);
@@ -56,13 +74,15 @@ public static class AskAIScript
                 return "Sorry, no reply from AI.";
             }
 
-            if (reply.Length > 450)
+            const int twitchLimit = 490; // give buffer room for username/prefix
+            if (reply.Length > twitchLimit)
             {
-                await TryLog("AskAIScript: Truncating long reply.");
-                reply = reply.Substring(0, 450) + "...";
+                await TryLog($"AskAIScript: Reply exceeds Twitch limit ({reply.Length} chars), truncating.");
+                reply = reply.Substring(0, twitchLimit).TrimEnd() + "...";
             }
 
             await TryLog($"AskAIScript: Final reply: \"{reply.Trim()}\"");
+
             return reply.Trim();
         }
         catch (Exception ex)
