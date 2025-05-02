@@ -11,43 +11,6 @@ using TwitchLib.Client.Events;
 using TwitchLib.Communication.Events;
 using System.Reflection;
 
-public class FlatButton : Button
-{
-    protected override bool ShowFocusCues => false;
-
-    protected override void OnPaint(PaintEventArgs pevent)
-    {
-        // Suppress system paint and draw clean button
-        pevent.Graphics.Clear(this.BackColor);
-
-        TextRenderer.DrawText(
-            pevent.Graphics,
-            this.Text,
-            this.Font,
-            this.ClientRectangle,
-            this.ForeColor,
-            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter
-        );
-    }
-
-    protected override void OnPaintBackground(PaintEventArgs pevent)
-    {
-        // Do nothing — prevents system from drawing highlight effects
-    }
-
-    protected override void OnGotFocus(EventArgs e)
-    {
-        base.OnGotFocus(e);
-        Invalidate(); // repaint to clear any residual effects
-    }
-
-    protected override void OnLostFocus(EventArgs e)
-    {
-        base.OnLostFocus(e);
-        Invalidate();
-    }
-}
-
 public partial class MainForm : Form
 {
     private TwitchClient client;
@@ -305,7 +268,7 @@ public partial class MainForm : Form
 
         Button CreateButton(string text)
         {
-            var button = new FlatButton
+            var button = new Button
             {
                 Text = text,
                 Left = inputLeft,
