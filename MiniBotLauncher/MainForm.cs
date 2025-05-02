@@ -155,7 +155,7 @@ public partial class MainForm : Form
             Form infoForm = new Form
             {
                 Text = "About MiniBotLauncher",
-                Size = new Size(400, 190),
+                Size = new Size(440, 200),
                 StartPosition = FormStartPosition.CenterParent,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
@@ -184,11 +184,20 @@ public partial class MainForm : Form
                 BackColor = Color.Transparent
             };
 
+            var attribution2 = new Label
+            {
+                Text = "Includes CMUdict (BSD-licensed) for offline syllable detection",
+                AutoSize = true,
+                Location = new Point(20, 60),
+                ForeColor = Color.White,
+                BackColor = Color.Transparent
+            };
+
             var link = new LinkLabel
             {
                 Text = "https://github.com/Ixitxachitl/MiniBotLauncher",
                 AutoSize = true,
-                Location = new Point(20, 60),
+                Location = new Point(20, 80),
                 LinkColor = Color.SteelBlue
             };
             link.LinkClicked += (ls, le) =>
@@ -204,7 +213,7 @@ public partial class MainForm : Form
             {
                 Text = "OK",
                 DialogResult = DialogResult.OK,
-                Location = new Point((infoForm.ClientSize.Width - 80) / 2, 100),
+                Location = new Point((infoForm.ClientSize.Width - 80) / 2, 110),
                 Width = 80,
                 Height = 40,
                 BackColor = Color.FromArgb(50, 50, 50),
@@ -218,6 +227,7 @@ public partial class MainForm : Form
 
             infoForm.Controls.Add(label);
             infoForm.Controls.Add(attribution);
+            infoForm.Controls.Add(attribution2);
             infoForm.Controls.Add(link);
             infoForm.Controls.Add(okButton);
             infoForm.AcceptButton = okButton;
