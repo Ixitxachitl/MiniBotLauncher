@@ -20,7 +20,7 @@ public static class ButtsBotScript
         if (message.TrimStart().StartsWith("!", StringComparison.Ordinal))
             return null;
 
-        if (rng.NextDouble() > 0.02)
+        if (rng.NextDouble() > 1)
         {
             await TryLog($"ButtsBot: Skipped message from {username} (no trigger).");
             return null;
@@ -79,22 +79,35 @@ public static class ButtsBotScript
 
         return anyReplaced ? string.Join("", modifiedTokens) : null;
     }
-
     private static List<string> HeuristicSyllableSplit(string word)
     {
         var syllables = new List<string>();
-        var current = new StringBuilder();
+        if (word.Length <= 3)
+        {
+            syllables.Add(word);
+            return syllables;
+        }
+
         string vowels = "aeiouy";
+        var current = new StringBuilder();
         word = word.ToLower();
 
         for (int i = 0; i < word.Length; i++)
         {
             current.Append(word[i]);
 
-            if (i < word.Length - 1 && vowels.Contains(word[i]) && !vowels.Contains(word[i + 1]))
+            // Look ahead: V-C-V or vowel before and after a consonant
+            if (i >= 1 && i < word.Length - 1)
             {
-                syllables.Add(current.ToString());
-                current.Clear();
+                bool isPrevVowel = vowels.Contains(word[i - 1]);
+                bool isCurrConsonant = !vowels.Contains(word[i]);
+                bool isNextVowel = vowels.Contains(word[i + 1]);
+
+                if (isPrevVowel && isCurrConsonant && isNextVowel)
+                {
+                    syllables.Add(current.ToString());
+                    current.Clear();
+                }
             }
         }
 
@@ -103,6 +116,7 @@ public static class ButtsBotScript
 
         return syllables;
     }
+
 
     private static async Task TryLog(string message)
     {
