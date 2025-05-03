@@ -87,8 +87,6 @@ public partial class MainForm : Form
         WeatherScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
         AskAIScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
         MarkovChainScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
-
-        client = new TwitchClient();
     }
 
     private void AddTopRightButtons()
@@ -180,7 +178,7 @@ public partial class MainForm : Form
 
             var label = new Label
             {
-                Text = "v2.2 ©2025 Ixitxachitl",
+                Text = "v0.2.2 ©2025 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20),
                 ForeColor = Color.White,
@@ -948,6 +946,7 @@ public partial class MainForm : Form
 
         client = new TwitchClient();
         client.AutoReListenOnException = false;
+        client.ReconnectAutomatically = false;
 
         string finalOAuth = txtOAuthToken.Text.StartsWith("oauth:") ? txtOAuthToken.Text : "oauth:" + txtOAuthToken.Text;
         ConnectionCredentials credentials = new ConnectionCredentials(txtBotUsername.Text, finalOAuth);
@@ -1039,16 +1038,18 @@ public partial class MainForm : Form
             txtChannelName.Enabled = true;
             btnGetToken.Enabled = true;
 
-            // Clean up old client properly
+            // 🛑 Prevent reconnect: force cleanup and null out the client
             if (client != null)
             {
                 client.OnConnected -= Client_OnConnected;
                 client.OnDisconnected -= Client_OnDisconnected;
-                client.OnConnectionError -= (s, e2) => Log($"Connection error: {e2.Error.Message}");
-                client.OnError -= (s, e2) => Log($"Client error: {e2.Exception.Message}");
-                client.OnLog -= (s, e2) => Log(e2.Data);
-                client.OnMessageReceived -= Client_OnMessageReceived;
-                client = null;  // 👈 VERY IMPORTANT: completely null out the old client!
+                client.OnConnectionError -= onConnectionError;
+                client.OnError -= onError;
+                client.OnLog -= onLog;
+                client.OnMessageReceived -= onMessageReceived;
+
+                client.Disconnect(); // Just to be safe — fully close it
+                client = null;
             }
 
             isDisconnecting = false;
