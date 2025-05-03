@@ -946,7 +946,6 @@ public partial class MainForm : Form
 
         client = new TwitchClient();
         client.AutoReListenOnException = false;
-        client.ReconnectAutomatically = false;
 
         string finalOAuth = txtOAuthToken.Text.StartsWith("oauth:") ? txtOAuthToken.Text : "oauth:" + txtOAuthToken.Text;
         ConnectionCredentials credentials = new ConnectionCredentials(txtBotUsername.Text, finalOAuth);
