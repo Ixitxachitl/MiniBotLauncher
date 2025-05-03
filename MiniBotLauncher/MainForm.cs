@@ -1003,6 +1003,8 @@ public partial class MainForm : Form
             btnConnect.Text = "Disconnect";
             EnableAllToggles();
 
+            MarkovChainScript.SetChannel(txtChannelName.Text);
+
             // Disable editing fields
             txtBotUsername.Enabled = false;
             txtClientID.Enabled = false;
@@ -1270,6 +1272,7 @@ public partial class MainForm : Form
 
         if (toggleMarkovChain.Checked)
         {
+            MarkovChainScript.SetChannel(channel);
             string markov = MarkovChainScript.LearnAndMaybeRespond(message, username, txtBotUsername.Text);
             if (!string.IsNullOrWhiteSpace(markov))
             {

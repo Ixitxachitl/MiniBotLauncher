@@ -9,11 +9,26 @@ public static class MarkovChainScript
     private static Dictionary<string, List<string>> transitions = new Dictionary<string, List<string>>();
     private static int messageCounter = 0;
     private static Random rng = new Random();
-    private static readonly string saveFilePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-        "MiniBot",
-        "markov_brain.json"
-    );
+    private static string currentChannel = null;
+    private static string baseFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "MiniBot");
+    private static string saveFilePath = null;
+    private static string lastLoadedFilePath = null;
+
+    public static void SetChannel(string channelName)
+    {
+        currentChannel = channelName.ToLowerInvariant();
+        string newPath = Path.Combine(baseFolder, $"markov_brain_{currentChannel}.json");
+
+        // Only load and log if it's a new file (or first time)
+        if (lastLoadedFilePath == null || !string.Equals(lastLoadedFilePath, newPath, StringComparison.OrdinalIgnoreCase))
+        {
+            saveFilePath = newPath;
+            LoadTransitions(); // This also sets 'transitions'
+            lastLoadedFilePath = newPath;
+            TryLog($"MarkovChainScript: Loaded Markov brain for channel '{currentChannel}' from '{saveFilePath}'.");
+        }
+    }
+
 
     public static void ResetCounter()
     {
@@ -127,6 +142,8 @@ public static class MarkovChainScript
 
     private static void LoadTransitions()
     {
+        transitions.Clear(); // Important: avoid blending old data
+
         try
         {
             if (File.Exists(saveFilePath))
