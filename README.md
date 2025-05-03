@@ -9,123 +9,131 @@
 
 MiniBotLauncher is a lightweight, C#/.NET 8 Windows Forms application that connects to Twitch chat and enables several fun, chat-interactive scripts, including:
 
-* **AskAI**: Ask AI natural language questions
-* **Weather**: Get real-time weather info
-* **Translate**: Automatically Translate Non-English into English
-* **ButtsBot**: Randomly replaces syllables in chat messages with "butt" for comedic effect
-* **ClapThatBot**: Generate funny "I'd clap that" responses
-* **MarkovChain**: Build a chat-based Markov brain and generate random sentences
+* **AskAI** — Ask natural language questions to a local AI model
+* **Weather** — Get real-time weather info for cities
+* **Translate** — Automatically translate non-English messages to English
+* **ButtsBot** — Randomly replaces syllables in messages with "butt" for comedic effect
+* **ClapThatBot** — Generates "I'd clap that" responses from adjective+noun pairs
+* **MarkovChain** — Builds a Markov chain brain from chat and generates random responses
 
 ---
 
 ## ✨ Features
 
-* Full Twitch OAuth authorization flow inside the app
-* Auto-save and load settings from `Documents\MiniBot\settings.json`
-* Enable or disable scripts individually
-* TwitchLib-based connection management
-* Self-contained publish (single .exe optional)
-* Built for .NET 8 (Modern, fast, portable)
-* Ignore messages from specific usernames using the new Ignore List popup
-* Dark theme UI with styled popup windows and modern tooltips
+* OAuth-based Twitch login flow built into the app
+* Auto-saves all settings to `Documents\MiniBot\settings.json`
+* Enable or disable each script individually using toggles
+* Each script has its own ⚙️ settings popup for configuration:
+
+  * **AskAI**: Model name, max tokens (1–255), optional system message
+  * **Weather**: Format string for customizing response output
+  * **Translate**: Choose target language from dropdown
+  * **ButtsBot**: Adjustable reply frequency (syllable replacements are fixed at 5%)
+  * **ClapThatBot**: Adjustable reply frequency
+  * **MarkovChain**: Reset brain with confirmation dialog
+* Ignore messages from specific users using the Ignore List popup
+* Stylish dark mode UI with rounded corners and tooltips
+* Most scripts operate offline. Weather and Translate use public web APIs and require an internet connection, but no user setup is needed.
 
 ---
 
 ## 💪 Requirements
 
-* Windows 10/11
-* .NET 8 Runtime (if not using self-contained EXE)
+* Windows 10 or 11
+* .NET 8 Runtime (unless using self-contained build)
 * Twitch account
 
 Optional:
 
-* Local GPT4All server running with the correct model (`llama3-8b-instruct`) for AskAI
-* No longer uses NLPCloud API — **ButtsBot** and **ClapThatBot** now use embedded offline models only.
+* Local GPT4All server with the `llama3-8b-instruct` model for AskAI
 
-> If you're using POS tagging, make sure `System.Runtime.Caching` is available (install via NuGet if needed).
+> ButtsBot and ClapThatBot use embedded offline models — no external services required.
 
 ---
 
 ## 📚 Installation
 
-1. Download the latest release.
-2. Extract the zip.
-3. Run `MiniBotLauncher.exe`.
+1. Download the latest release from GitHub
+2. Extract the contents
+3. Run `MiniBotLauncher.exe`
 
-> Settings are saved automatically to:
->
-> `C:\Users\<YourName>\Documents\MiniBot\settings.json`
+Settings are stored at:
 
-> The Markov brain is saved to:
->
-> `C:\Users\<YourName>\Documents\MiniBot\markov_brain.json`
+```
+C:\Users\<YourName>\Documents\MiniBot\settings.json
+```
+
+Markov brain data is stored at:
+
+```
+C:\Users\<YourName>\Documents\MiniBot\markov_brain.json
+```
 
 ---
 
 ## ⚙️ Setup Instructions
 
-1. **Enter your Twitch Bot Username** (the account you want the bot to act as).
-2. **Enter your Client ID**:
+1. Enter your **Twitch Bot Username**
+2. Enter your **Client ID** from [https://dev.twitch.tv/console/apps](https://dev.twitch.tv/console/apps)
 
-   * Go to [https://dev.twitch.tv/console/apps](https://dev.twitch.tv/console/apps)
-   * Create a new Application.
-   * Set Redirect URL to: `http://localhost:8750/callback/`
-   * Copy your Client ID.
-3. **Enter your Channel Name** (the channel to join).
-4. **Click 'Get Token'**:
+   * Set redirect URL: `http://localhost:8750/callback/`
+3. Enter the **Channel Name** to join
+4. Click **Get Token** and authorize access
+5. Click **Connect**
+6. Toggle the scripts you want active
+7. Click each script's ⚙️ to configure its behavior
+8. Use the 📄 button in the top-right to open the Ignore List
 
-   * A browser window will open.
-   * Approve the permissions.
-   * The token will automatically populate.
-5. **Click 'Connect'**.
-6. **Toggle on the scripts you want active**.
-7. **Manage Ignored Users** with the 📄 icon next to the pin (top-right of the window).
-
-> **Important Notes:**
->
-> * **AskAI** requires a local GPT4All server running with the correct model (`llama3-8b-instruct`).
-> * **ButtsBot** uses the CMU Pronouncing Dictionary (CMUdict) to identify syllables and replace them with "butt" with a small random chance.
-> * CMUdict is embedded as a resource and used offline with no external dependencies.
+> AskAI requires GPT4All running locally.
+> ButtsBot replaces syllables at random — one syllable is always replaced if none were hit by chance.
+> MarkovChain will respond every 35 messages and can be reset via its settings.
 
 ---
 
 ## 🔹 Scripts Overview
 
-| Script      | Description                                                                                                 |
-| :---------- | :---------------------------------------------------------------------------------------------------------- |
-| AskAI       | Answers natural language questions. Requires a local GPT4All server running the `llama3-8b-instruct` model. |
-| Weather     | Provides real-time weather based on city name.                                                              |
-| Translate   | Automatically translates non-English messages to English.                                                   |
-| ButtsBot    | Replaces random syllables in user messages with "butt" using offline CMUdict-based syllable parsing.        |
-| ClapThatBot | Generates "I'd clap that" jokes from adjective+noun pairs using local POS tagging.                          |
-| MarkovChain | Learns from chat and generates fun, random sentences every 35 messages.                                     |
+| Script      | Description                                                                                   |
+| ----------- | --------------------------------------------------------------------------------------------- |
+| AskAI       | Answers natural language queries using a local AI model                                       |
+| Weather     | Provides current weather using wttr.in with customizable output formatting                    |
+| Translate   | Detects non-English and translates into your chosen target language                           |
+| ButtsBot    | Replaces \~5% of syllables in messages with "butt" — reply rate adjustable in settings        |
+| ClapThatBot | Detects adjective+noun phrases and responds with "I'd clap that" — reply rate adjustable      |
+| MarkovChain | Learns from chat to generate new phrases every 35 messages — brain can be reset from settings |
 
 ---
 
 ## 🚀 Building from Source
 
 * Open `MiniBotLauncher.sln` in Visual Studio 2022+
-* Set Configuration to `Release`
+* Build in `Release` mode
 * Right-click project → Publish
-* Use **Self-contained**, **Single EXE** if you want a portable build
+* Use self-contained, single-file publish option for portability
 
 ---
 
 ## 📄 License
 
-MIT License. Free for any personal or commercial use.
+MIT License — free for personal or commercial use
 
-OpenNLP is used for offline part-of-speech tagging and is licensed under the Apache License 2.0.
+Third-party libraries:
 
-CMUdict is used for syllable parsing and distributed under a BSD-style license (included in the file header).
+* **OpenNLP** — POS tagging (Apache 2.0)
+* **CMUdict** — Syllable parsing (BSD-style license)
+* **TwitchLib** — Twitch connection
+* **GPT4All** — Local AI inference engine
+* **Newtonsoft.Json** — JSON parsing for settings and Markov brain
 
 ---
 
 ## 🚀 Credits
 
-* TwitchLib (chat connection)
-* Newtonsoft.Json (settings and Markov brain)
-* OpenNLP (offline POS tagging with legacy `.nbin` model)
-* CMUdict (syllable parsing)
-* GPT4All (local AI serving for AskAI)
-* Built by **Ixitxachitl**
+Thanks to:
+
+* TwitchLib
+* GPT4All
+* OpenNLP
+* CMUdict
+* Newtonsoft.Json
+
+Built with ❤️ by **Ixitxachitl**
