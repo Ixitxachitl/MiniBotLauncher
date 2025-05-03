@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -17,12 +14,22 @@ public static class ButtsBotScript
         replyChancePercent = Math.Clamp(percent, 1, 100);
     }
 
-
-
     public static Func<string, Task> DebugLog = null;
 
     public static async Task<string> Process(string message, string username)
     {
+        if (string.IsNullOrWhiteSpace(message) || string.IsNullOrWhiteSpace(username))
+            return null;
+
+        int roll = rng.Next(100);
+        if (roll >= replyChancePercent)
+        {
+            await TryLog($"ButtsBot: Skipped message from {username} (roll {roll} ≥ {replyChancePercent}).");
+            return null;
+        }
+
+        await TryLog($"ButtsBot: Triggered for message from {username}: \"{message}\"");
+
         if (!CanReplaceSyllables(message))
         {
             await TryLog("ButtsBot: No syllables found in message — skipping.");
@@ -30,13 +37,13 @@ public static class ButtsBotScript
         }
 
         string funnyText = await ReplaceSyllablesWithButt(message, 0.05);
-
+        await TryLog($"ButtsBot: Responding with: \"{funnyText}\"");
         return funnyText;
     }
 
     private static async Task<string> ReplaceSyllablesWithButt(string message, double replaceChance)
     {
-        if (DebugLog != null) await DebugLog.Invoke($"[DEBUG] Using replaceChance: {replaceChance}");
+        await TryLog($"ButtsBot: Using replaceChance: {replaceChance}");
         var tokens = Regex.Split(message, "(\\W+)");
         var modifiedTokens = new List<string>();
         var syllableMap = new Dictionary<int, List<string>>();
@@ -71,25 +78,23 @@ public static class ButtsBotScript
                 if (rng.NextDouble() < replaceChance)
                 {
                     toReplace.Add((i, j));
-                    if (DebugLog != null) await DebugLog.Invoke($"[5% HIT] Token {i}, Syllable {j}: '{original}' → 'butt'");
+                    await TryLog($"ButtsBot: [5% HIT] Token {i}, Syllable {j}: \"{original}\" → \"butt\"");
                 }
                 else
                 {
-                    if (DebugLog != null) await DebugLog.Invoke($"[SKIP] Token {i}, Syllable {j}: '{original}' left unchanged");
+                    await TryLog($"ButtsBot: [SKIP] Token {i}, Syllable {j}: \"{original}\" left unchanged");
                 }
             }
         }
 
-        if (DebugLog != null) await DebugLog.Invoke($"[REPLACE COUNT] {toReplace.Count} syllable(s) marked for replacement");
+        await TryLog($"ButtsBot: [REPLACE COUNT] {toReplace.Count} syllable(s) marked for replacement");
         if (toReplace.Count == 0 && fallback.Count > 0)
         {
             var forced = fallback[rng.Next(fallback.Count)];
             toReplace.Add(forced);
-            if (DebugLog != null) await DebugLog.Invoke($"[FORCED] Token {forced.tokenIndex}, Syllable {forced.syllableIndex} → 'butt'");
-
+            await TryLog($"ButtsBot: [FORCED] Token {forced.tokenIndex}, Syllable {forced.syllableIndex} → \"butt\"");
         }
 
-        // This is the correct and final fix: in-place mutation only
         foreach (var (tokenIndex, syllableIndex) in toReplace)
         {
             if (syllableMap.TryGetValue(tokenIndex, out var list) && syllableIndex < list.Count)
@@ -105,7 +110,7 @@ public static class ButtsBotScript
         }
 
         var result = string.Join("", modifiedTokens);
-        if (DebugLog != null) await DebugLog.Invoke($"[FINAL OUTPUT] {result}");
+        await TryLog($"ButtsBot: [FINAL OUTPUT] {result}");
         return result;
     }
 

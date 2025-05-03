@@ -27,9 +27,10 @@ public static class ClapThatBotScript
         if (message.TrimStart().StartsWith("!", StringComparison.Ordinal))
             return null;
 
-        if (rng.Next(100) >= replyChancePercent)
+        int roll = rng.Next(100);
+        if (roll >= replyChancePercent)
         {
-            await TryLog($"ClapThatBot: Skipped message from {username} (no trigger).");
+            await TryLog($"ClapThatBot: Skipped message from {username} (roll {roll} ≥ {replyChancePercent}).");
             return null;
         }
 
