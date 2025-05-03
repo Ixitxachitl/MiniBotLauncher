@@ -180,7 +180,7 @@ public partial class MainForm : Form
 
             var label = new Label
             {
-                Text = "v2.1 ©2025 Ixitxachitl",
+                Text = "v2.2 ©2025 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20),
                 ForeColor = Color.White,
@@ -701,17 +701,27 @@ public partial class MainForm : Form
 
             if (dialog.ShowDialog(this) == DialogResult.OK)
             {
+                string channel = txtChannelName.Text.ToLowerInvariant();
+                MarkovChainScript.SetChannel(channel);
+
                 string brainFile = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                     "MiniBot",
-                    "markov_brain.json");
+                    $"markov_brain_{channel}.json");
+
                 try
                 {
                     if (File.Exists(brainFile))
                     {
                         File.Delete(brainFile);
-                        MarkovChainScript.ResetCounter();
+                        Log($"Markov brain for channel '{channel}' was deleted.");
                     }
+                    else
+                    {
+                        Log($"No existing Markov brain file found for channel '{channel}'.");
+                    }
+
+                    MarkovChainScript.ResetCounter();
                     Log("Markov brain reset successfully.");
                 }
                 catch (Exception ex)
