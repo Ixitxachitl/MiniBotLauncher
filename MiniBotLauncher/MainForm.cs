@@ -68,8 +68,11 @@ public partial class MainForm : Form
         AskAIScript.SetConfig(
             settings.AskAI_ModelName,
             settings.AskAI_MaxTokens,
-            settings.AskAI_SystemMessage
+            settings.AskAI_SystemMessage,
+            settings.AskAI_ServerAddress,
+            settings.AskAI_ServerPort
         );
+
         WeatherScript.SetFormat(settings.Weather_FormatString);
         TranslateScript.SetTargetLanguage(settings.Translate_TargetLanguage);
         ButtsBotScript.SetReplyChance(settings.ButtsBot_ReplyChancePercent);
@@ -178,7 +181,7 @@ public partial class MainForm : Form
 
             var label = new Label
             {
-                Text = "v0.2.2 ©2025 Ixitxachitl",
+                Text = "v0.2.3 ©2025 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20),
                 ForeColor = Color.White,
@@ -475,7 +478,9 @@ public partial class MainForm : Form
             AskAIScript.SetConfig(
                 settings.AskAI_ModelName,
                 settings.AskAI_MaxTokens,
-                settings.AskAI_SystemMessage
+                settings.AskAI_SystemMessage,
+                settings.AskAI_ServerAddress,
+                settings.AskAI_ServerPort
             );
 
             this.TopMost = wasTopMost;

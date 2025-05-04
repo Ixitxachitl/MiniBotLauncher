@@ -17,9 +17,12 @@ public class SettingsData
     public List<string> IgnoredUsernames { get; set; } = new();
 
     // AI-specific settings
-    public string AskAI_ModelName { get; set; } = "llama3-8b-instruct";
-    public int AskAI_MaxTokens { get; set; } = 130;
+    public string AskAI_ServerAddress { get; set; } = "http://localhost";
+    public int AskAI_ServerPort { get; set; } = 4891;
+    public string AskAI_ModelName { get; set; } = "Llama 3 8B Instruct";
+    public int AskAI_MaxTokens { get; set; } = 50;
     public string AskAI_SystemMessage { get; set; } = "";
+
 
     // Weather-specific settings
     public string Weather_FormatString { get; set; } = "2";

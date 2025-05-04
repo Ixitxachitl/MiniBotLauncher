@@ -8,19 +8,24 @@ using Newtonsoft.Json.Linq;
 public static class AskAIScript
 {
     private static readonly HttpClient httpClient = new HttpClient();
-    private static readonly string gptServerUrl = "http://localhost:4891/v1/chat/completions";
+    private static string gptServerUrl = "http://localhost:4891/v1/chat/completions";
+    public static void SetServer(string address, int port)
+    {
+        gptServerUrl = $"{address}:{port}/v1/chat/completions";
+    }
 
     public static Func<string, Task> DebugLog = null;
 
-    private static string modelName = "llama3-8b-instruct";
-    private static int maxTokens = 130;
+    private static string modelName = "Llama 3 8B Instruct";
+    private static int maxTokens = 50;
     private static string systemMessage = "";
 
-    public static void SetConfig(string model, int tokens, string systemMsg)
+    public static void SetConfig(string model, int tokens, string systemMsg, string serverAddress, int port)
     {
-        modelName = string.IsNullOrWhiteSpace(model) ? "llama3-8b-instruct" : model;
+        modelName = string.IsNullOrWhiteSpace(model) ? "Llama 3 8B Instruct" : model;
         maxTokens = Math.Max(1, Math.Min(255, tokens));
         systemMessage = systemMsg ?? "";
+        gptServerUrl = $"{serverAddress}:{port}/v1/chat/completions";
     }
 
     public static async Task<string> GetResponse(string prompt)
@@ -83,13 +88,26 @@ public static class AskAIScript
 
             await TryLog($"AskAIScript: Final reply: \"{reply.Trim()}\"");
 
-            return reply.Trim();
+            return CleanModelOutput(reply.Trim());
         }
         catch (Exception ex)
         {
             await TryLog($"AskAIScript: Exception occurred - {ex.Message}");
             return $"Error contacting AI: {ex.Message}";
         }
+    }
+
+    private static string CleanModelOutput(string response)
+    {
+        if (string.IsNullOrWhiteSpace(response)) return response;
+
+        // Trim known role-like labels if they appear after punctuation at the end
+        return System.Text.RegularExpressions.Regex.Replace(
+            response,
+            @"[-–—]\s*(tutor|assistant|user|response|system|bot|ai|helper|model|guide|coach|mentor|responder)[:\s]*$",
+            "",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase
+        ).Trim();
     }
 
     private static async Task TryLog(string message)
