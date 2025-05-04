@@ -66,7 +66,7 @@ C:\Users\<YourName>\Documents\MiniBot\settings.json
 Markov brain data is stored at:
 
 ```
-C:\Users\<YourName>\Documents\MiniBot\markov_brain.json
+C:\Users\<YourName>\Documents\MiniBot\markov_brain_<channel>.json
 ```
 
 ---
