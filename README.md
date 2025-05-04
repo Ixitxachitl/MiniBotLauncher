@@ -7,14 +7,8 @@
 
 # MiniBotLauncher
 
-MiniBotLauncher is a lightweight, C#/.NET 8 Windows Forms application that connects to Twitch chat and enables several fun, chat-interactive scripts, including:
-
-* **AskAI** — Ask natural language questions to a local AI model
-* **Weather** — Get real-time weather info for cities
-* **Translate** — Automatically translate non-English messages to English
-* **ButtsBot** — Randomly replaces syllables in messages with "butt" for comedic effect
-* **ClapThatBot** — Generates "I'd clap that" responses from adjective+noun pairs
-* **MarkovChain** — Builds a Markov chain brain from chat and generates random responses
+| MiniBotLauncher is a lightweight, C#/.NET 8 Windows Forms application that connects to Twitch chat and enables several fun, chat-interactive scripts, including:<br><br>• **AskAI** — Ask natural language questions to a local AI model<br>• **Weather** — Get real-time weather info for cities<br>• **Translate** — Automatically translate non-English messages to English<br>• **ButtsBot** — Randomly replaces syllables in messages with "butt" for comedic effect<br>• **ClapThatBot** — Generates "I'd clap that" responses from adjective+noun pairs<br>• **MarkovChain** — Builds a Markov chain brain from chat and generates random responses | ![MiniBotLauncher Screenshot](https://github.com/user-attachments/assets/1d083a15-63f4-4143-b79b-be8e9b707af8) |
+|:------------|------------:|
 
 ---
 
