@@ -25,7 +25,7 @@ MiniBotLauncher is a lightweight, C#/.NET 8 Windows Forms application that conne
 * Enable or disable each script individually using toggles
 * Each script has its own ⚙️ settings popup for configuration:
 
-  * **AskAI**: Model name, max tokens (1–255), optional system message
+  * **AskAI**: Server address, port, model dropdown (auto-fetched), max tokens (1–255), optional system message
   * **Weather**: Format string for customizing response output
   * **Translate**: Choose target language from dropdown
   * **ButtsBot**: Adjustable reply frequency (syllable replacements are fixed at 5%)
@@ -45,7 +45,7 @@ MiniBotLauncher is a lightweight, C#/.NET 8 Windows Forms application that conne
 
 Optional:
 
-* Local GPT4All server with the `llama3-8b-instruct` model for AskAI
+* Local GPT4All server with compatible models such as `llama3-8b-instruct` or `phi-3-mini-instruct`
 
 > ButtsBot and ClapThatBot use embedded offline models — no external services required.
 
@@ -84,7 +84,8 @@ C:\Users\<YourName>\Documents\MiniBot\markov_brain.json
 7. Click each script's ⚙️ to configure its behavior
 8. Use the 📄 button in the top-right to open the Ignore List
 
-> AskAI requires GPT4All running locally.
+> AskAI requires GPT4All running locally. Now includes server/port configuration and automatic model listing.
+> Responses with trailing tags like `tutor:` or `response:` are automatically cleaned unless clearly part of the content.
 > ButtsBot replaces syllables at random — one syllable is always replaced if none were hit by chance.
 > MarkovChain will respond every 35 messages and can be reset via its settings.
 
