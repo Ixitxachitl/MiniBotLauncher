@@ -11,6 +11,12 @@ public static class ClapThatBotScript
 {
     private static readonly Random rng = new Random();
     private static int replyChancePercent = 2;
+    private static string replacementWord = "clap";
+
+    public static void SetReplacementWord(string word)
+    {
+        replacementWord = string.IsNullOrWhiteSpace(word) ? "clap" : word;
+    }
 
     public static void SetReplyChance(int percent)
     {
@@ -47,7 +53,7 @@ public static class ClapThatBotScript
             }
 
             string article = isPlural ? "those" : "that";
-            string response = $"I'd clap {article} {adjective.ToLower()} {noun.ToLower()}!";
+            string response = $"I'd {replacementWord} {article} {adjective.ToLower()} {noun.ToLower()}!";
             await TryLog($"ClapThatBot: Responding with: \"{response}\"");
 
             return response;

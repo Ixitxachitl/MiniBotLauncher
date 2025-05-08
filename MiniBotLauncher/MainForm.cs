@@ -25,6 +25,7 @@ public partial class MainForm : Form
     private CheckBox toggleButtsbot;
     private CheckBox toggleClapThat;
     private CheckBox toggleMarkovChain;
+    private CheckBox toggleSoundAlerts;
     private Button btnGetToken;
     private Button btnConnect;
     private TextBox txtStatusLog;
@@ -39,6 +40,7 @@ public partial class MainForm : Form
     private NotifyIcon trayIcon;
     private ContextMenuStrip trayMenu;
     private List<string> ignoredUsernames = new List<string>();
+    private TrackBar trackVolume;
 
     // Stored event handlers for clean unsubscription
     private EventHandler<OnConnectedArgs> onConnected;
@@ -77,6 +79,7 @@ public partial class MainForm : Form
         TranslateScript.SetTargetLanguage(settings.Translate_TargetLanguage);
         ButtsBotScript.SetReplyChance(settings.ButtsBot_ReplyChancePercent);
         ClapThatBotScript.SetReplyChance(settings.ClapThat_ReplyChancePercent);
+        ButtsBotScript.SetReplacementWord(settings.ButtsBot_ReplacementWord);
 
         lblOAuthTokenDisplay.Text = string.IsNullOrWhiteSpace(txtOAuthToken.Text)
             ? ""
@@ -181,7 +184,7 @@ public partial class MainForm : Form
 
             var label = new Label
             {
-                Text = "v0.2.3 ©2025 Ixitxachitl",
+                Text = "v0.2.7 ©2025 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20),
                 ForeColor = Color.White,
@@ -287,7 +290,7 @@ public partial class MainForm : Form
     private void InitializeComponent()
     {
         this.Text = "MiniBotLauncher";
-        this.Size = new Size(515, 625);
+        this.Size = new Size(515, 680);
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MaximizeBox = false;
         this.BackColor = Color.FromArgb(30, 30, 30);
@@ -588,6 +591,7 @@ public partial class MainForm : Form
             {
                 SaveSettings();
                 ButtsBotScript.SetReplyChance(settings.ButtsBot_ReplyChancePercent);
+                ButtsBotScript.SetReplacementWord(settings.ButtsBot_ReplacementWord);
             }
 
             this.TopMost = wasTopMost;
@@ -623,6 +627,7 @@ public partial class MainForm : Form
             {
                 SaveSettings();
                 ClapThatBotScript.SetReplyChance(settings.ClapThat_ReplyChancePercent);
+                ClapThatBotScript.SetReplacementWord(settings.ClapThat_ReplacementWord);
             }
 
             this.TopMost = wasTopMost;
@@ -738,6 +743,89 @@ public partial class MainForm : Form
         };
 
         this.Controls.Add(btnMarkovSettings);
+
+        currentTop += 40;
+
+        toggleSoundAlerts = CreateToggle("Sound Alerts", marginLeft);
+        toggleSoundAlerts.Width -= 35;
+        // Restore rounded corners (both sides) on narrower toggle
+        toggleSoundAlerts.Region = Region.FromHrgn(CreateRoundRectRgn(
+            0, 0, toggleSoundAlerts.Width, toggleSoundAlerts.Height, 10, 10));
+
+        Button btnSoundAlertsSettings = new Button
+        {
+            Text = "⚙️",
+            Size = new Size(30, 30),
+            Location = new Point(toggleSoundAlerts.Right + 5, toggleSoundAlerts.Top + 3),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.Transparent,
+            ForeColor = Color.White
+        };
+        btnSoundAlertsSettings.FlatAppearance.BorderSize = 0;
+        btnSoundAlertsSettings.Click += (s, e) =>
+        {
+            bool wasTopMost = this.TopMost;
+            this.TopMost = false;
+            this.SendToBack();
+
+            var form = new SoundAlertsForm(settings);
+            if (form.ShowDialog(this) == DialogResult.OK)
+            {
+                SaveSettings();
+                SoundAlerts.SetSoundMappings(settings.SoundAlertMappings);
+            }
+
+            this.TopMost = wasTopMost;
+            this.BringToFront();
+        };
+
+        // Volume slider
+        trackVolume = new TrackBar
+        {
+            Minimum = 0,
+            Maximum = 100,
+            Value = 100,
+            TickStyle = TickStyle.None,
+            Width = 190,
+            Left = btnSoundAlertsSettings.Right + 5,
+            Top = toggleSoundAlerts.Top + 7,
+            BackColor = Color.FromArgb(30, 30, 30)
+        };
+        trackVolume.Scroll += (s, e) =>
+        {
+            SoundAlerts.SetVolume(trackVolume.Value / 100f);
+            SaveSettings();
+        };
+
+        // Stop button
+        Button btnStopAlerts = new Button
+        {
+            Text = "⏹️",
+            Size = new Size(30, 30),
+            Location = new Point(trackVolume.Right, toggleSoundAlerts.Top + 3),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.Transparent,
+            ForeColor = Color.White,
+            Enabled = false
+        };
+        btnStopAlerts.FlatAppearance.BorderSize = 0;
+        btnStopAlerts.Click += (s, e) =>
+        {
+            SoundAlerts.StopAll();
+            btnStopAlerts.Enabled = false;
+        };
+
+        // Enable/disable stop button during playback
+        SoundAlerts.OnPlaybackStateChanged = (isPlaying) =>
+        {
+            btnStopAlerts.Invoke(() => btnStopAlerts.Enabled = isPlaying);
+        };
+
+        this.Controls.Add(toggleSoundAlerts);
+        this.Controls.Add(btnSoundAlertsSettings);
+        this.Controls.Add(trackVolume);
+        this.Controls.Add(btnStopAlerts);
+
 
         currentTop += 55;
         txtStatusLog = new TextBox
@@ -1064,25 +1152,75 @@ public partial class MainForm : Form
     {
         if (File.Exists(SettingsFile))
         {
-            string json = File.ReadAllText(SettingsFile);
-            settings = JsonSerializer.Deserialize<SettingsData>(json);
-
-            txtBotUsername.Text = settings.BotUsername;
-            txtClientID.Text = settings.ClientID;
-            txtOAuthToken.Text = settings.OAuthToken;
-            txtChannelName.Text = settings.ChannelName;
-
-            toggleAskAI.Checked = settings.AskAIEnabled;
-            toggleWeather.Checked = settings.WeatherEnabled;
-            toggleTranslate.Checked = settings.TranslateEnabled;
-            toggleButtsbot.Checked = settings.ButtsbotEnabled;
-            toggleClapThat.Checked = settings.ClapThatEnabled;
-            toggleMarkovChain.Checked = settings.MarkovChainEnabled;
-
-            if (settings.IgnoredUsernames != null)
-                ignoredUsernames = settings.IgnoredUsernames;
+            try
+            {
+                string json = File.ReadAllText(SettingsFile);
+                settings = JsonSerializer.Deserialize<SettingsData>(json);
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to load settings: {ex.Message}");
+                settings = new SettingsData(); // fallback to default
+            }
         }
+
+        // Ensure no nulls for collections
+        settings.IgnoredUsernames ??= new List<string>();
+        settings.SoundAlertMappings ??= new Dictionary<string, string>();
+
+        // Update UI
+        txtBotUsername.Text = settings.BotUsername ?? "";
+        txtClientID.Text = settings.ClientID ?? "";
+        txtOAuthToken.Text = settings.OAuthToken ?? "";
+        txtChannelName.Text = settings.ChannelName ?? "";
+
+        // Sync toggles
+        toggleAskAI.Checked = settings.AskAIEnabled;
+        toggleWeather.Checked = settings.WeatherEnabled;
+        toggleTranslate.Checked = settings.TranslateEnabled;
+        toggleButtsbot.Checked = settings.ButtsbotEnabled;
+        toggleClapThat.Checked = settings.ClapThatEnabled;
+        toggleMarkovChain.Checked = settings.MarkovChainEnabled;
+        toggleSoundAlerts.Checked = settings.SoundAlertsEnabled;
+
+        // Sync script settings
+        AskAIScript.SetConfig(
+            settings.AskAI_ModelName,
+            settings.AskAI_MaxTokens,
+            settings.AskAI_SystemMessage,
+            settings.AskAI_ServerAddress,
+            settings.AskAI_ServerPort
+        );
+
+        WeatherScript.SetFormat(settings.Weather_FormatString);
+        TranslateScript.SetTargetLanguage(settings.Translate_TargetLanguage);
+        ButtsBotScript.SetReplyChance(settings.ButtsBot_ReplyChancePercent);
+        ButtsBotScript.SetReplacementWord(settings.ButtsBot_ReplacementWord);
+        ClapThatBotScript.SetReplyChance(settings.ClapThat_ReplyChancePercent);
+        ClapThatBotScript.SetReplacementWord(settings.ClapThat_ReplacementWord);
+        SoundAlerts.SetSoundMappings(settings.SoundAlertMappings);
+
+        // Sync debug logging
+        AskAIScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
+        WeatherScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
+        TranslateScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
+        ButtsBotScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
+        ClapThatBotScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
+        MarkovChainScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
+        SoundAlerts.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
+
+        // Sync ignored list
+        ignoredUsernames = new List<string>(settings.IgnoredUsernames);
+
+        // Update display
+        lblOAuthTokenDisplay.Text = string.IsNullOrWhiteSpace(txtOAuthToken.Text)
+            ? ""
+            : new string('●', txtOAuthToken.Text.Length);
+
+        trackVolume.Value = Math.Clamp(settings.SoundAlertsVolume, trackVolume.Minimum, trackVolume.Maximum);
+        SoundAlerts.SetVolume(trackVolume.Value / 100f);
     }
+
 
     private void SaveSettings()
     {
@@ -1098,6 +1236,8 @@ public partial class MainForm : Form
         settings.ClapThatEnabled = toggleClapThat.Checked;
         settings.MarkovChainEnabled = toggleMarkovChain.Checked;
         settings.IgnoredUsernames = ignoredUsernames;
+        settings.SoundAlertsEnabled = toggleSoundAlerts.Checked;
+        settings.SoundAlertsVolume = trackVolume.Value;
 
         try
         {
@@ -1130,6 +1270,7 @@ public partial class MainForm : Form
         toggleButtsbot.Enabled = false;
         toggleClapThat.Enabled = false;
         toggleMarkovChain.Enabled = false;
+        toggleSoundAlerts.Enabled = false;
     }
 
     private void EnableAllToggles()
@@ -1140,6 +1281,7 @@ public partial class MainForm : Form
         toggleMarkovChain.Enabled = true;
         toggleButtsbot.Enabled = true;
         toggleClapThat.Enabled = true;
+        toggleSoundAlerts.Enabled = true;
     }
 
     private void TextFields_TextChanged(object sender, EventArgs e) => UpdateToggleStates();
@@ -1162,6 +1304,7 @@ public partial class MainForm : Form
             toggleMarkovChain.Enabled = basicReady;
             toggleButtsbot.Enabled = basicReady;
             toggleClapThat.Enabled = basicReady;
+            toggleSoundAlerts.Enabled = basicReady;
         }
         else
         {
@@ -1228,6 +1371,16 @@ public partial class MainForm : Form
         {
             Log("Ignored link-containing message.");
             return;
+        }
+
+        if (toggleSoundAlerts.Checked)
+        {
+            SoundAlerts.Enabled = true;
+            await SoundAlerts.TryHandleMessage(message);
+        }
+        else
+        {
+            SoundAlerts.Enabled = false;
         }
 
         // Command: !askai prompt

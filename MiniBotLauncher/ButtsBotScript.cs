@@ -8,6 +8,12 @@ public static class ButtsBotScript
     private static readonly Random rng = new Random();
     private static readonly Dictionary<string, List<string>> CmuDict = new();
     private static int replyChancePercent = 2;
+    private static string replacementWord = "butt";
+
+    public static void SetReplacementWord(string word)
+    {
+        replacementWord = string.IsNullOrWhiteSpace(word) ? "butt" : word;
+    }
 
     public static void SetReplyChance(int percent)
     {
@@ -78,7 +84,7 @@ public static class ButtsBotScript
                 if (rng.NextDouble() < replaceChance)
                 {
                     toReplace.Add((i, j));
-                    await TryLog($"ButtsBot: [5% HIT] Token {i}, Syllable {j}: \"{original}\" → \"butt\"");
+                    await TryLog($"ButtsBot: [5% HIT] Token {i}, Syllable {j}: \"{original}\" → \"{replacementWord}\"");
                 }
                 else
                 {
@@ -92,14 +98,14 @@ public static class ButtsBotScript
         {
             var forced = fallback[rng.Next(fallback.Count)];
             toReplace.Add(forced);
-            await TryLog($"ButtsBot: [FORCED] Token {forced.tokenIndex}, Syllable {forced.syllableIndex} → \"butt\"");
+            await TryLog($"ButtsBot: [FORCED] Token {forced.tokenIndex}, Syllable {forced.syllableIndex} → \"{replacementWord}\"");
         }
 
         foreach (var (tokenIndex, syllableIndex) in toReplace)
         {
             if (syllableMap.TryGetValue(tokenIndex, out var list) && syllableIndex < list.Count)
             {
-                list[syllableIndex] = "butt";
+                list[syllableIndex] = replacementWord;
             }
         }
 
