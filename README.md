@@ -7,8 +7,8 @@
 
 # MiniBotLauncher
 
-| MiniBotLauncher is a lightweight, C#/.NET 8 Windows Forms application that connects to Twitch chat and enables several fun, chat-interactive scripts, including:<br><br>• **AskAI** — Ask natural language questions to a local AI model<br>• **Weather** — Get real-time weather info for cities<br>• **Translate** — Automatically translate non-English messages to English<br>• **ButtsBot** — Randomly replaces syllables in messages with "butt" for comedic effect<br>• **ClapThatBot** — Generates "I'd clap that" responses from adjective+noun pairs<br>• **MarkovChain** — Builds a Markov chain brain from chat and generates random responses | ![MiniBotLauncher Screenshot](https://github.com/user-attachments/assets/1d083a15-63f4-4143-b79b-be8e9b707af8) |
-|:------------|------------:|
+| MiniBotLauncher is a lightweight, C#/.NET 8 Windows Forms application that connects to Twitch chat and enables several fun, chat-interactive scripts, including:<br><br>• **AskAI** — Ask natural language questions to a local AI model<br>• **Weather** — Get real-time weather info for cities<br>• **Translate** — Automatically translate non-English messages to English<br>• **ButtsBot** — Randomly replaces syllables in messages with "butt" for comedic effect<br>• **ClapThatBot** — Generates "I'd clap that" responses from adjective+noun pairs<br>• **MarkovChain** — Builds a Markov chain brain from chat and generates random responses<br>• **Sound Alerts** — Plays sound effects on specific commands; supports .mp3/.wav, volume control, and a stop/clear queue button | ![MiniBotLauncher Screenshot](https://github.com/user-attachments/assets/1d083a15-63f4-4143-b79b-be8e9b707af8) |
+| :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------: |
 
 ---
 
@@ -25,6 +25,7 @@
   * **ButtsBot**: Adjustable reply frequency (syllable replacements are fixed at 5%)
   * **ClapThatBot**: Adjustable reply frequency
   * **MarkovChain**: Reset brain with confirmation dialog
+  * **Sound Alerts**: Add trigger-to-sound mappings, adjust volume, and stop/clear playback queue
 * Ignore messages from specific users using the Ignore List popup
 * Stylish dark mode UI with rounded corners and tooltips
 * Most scripts operate offline. Weather and Translate use public web APIs and require an internet connection, but no user setup is needed.
@@ -82,19 +83,21 @@ C:\Users\<YourName>\Documents\MiniBot\markov_brain_<channel>.json
 > Responses with trailing tags like `tutor:` or `response:` are automatically cleaned unless clearly part of the content.
 > ButtsBot replaces syllables at random — one syllable is always replaced if none were hit by chance.
 > MarkovChain will respond every 35 messages and can be reset via its settings.
+> Sound Alerts maps chat commands to sound files and queues them for playback with a short delay. It supports `.mp3` and `.wav`, adjustable volume, and a button to stop and clear the current queue.
 
 ---
 
 ## 🔹 Scripts Overview
 
-| Script      | Description                                                                                   |
-| ----------- | --------------------------------------------------------------------------------------------- |
-| AskAI       | Answers natural language queries using a local AI model                                       |
-| Weather     | Provides current weather using wttr.in with customizable output formatting                    |
-| Translate   | Detects non-English and translates into your chosen target language                           |
-| ButtsBot    | Replaces \~5% of syllables in messages with "butt" — reply rate adjustable in settings        |
-| ClapThatBot | Detects adjective+noun phrases and responds with "I'd clap that" — reply rate adjustable      |
-| MarkovChain | Learns from chat to generate new phrases every 35 messages — brain can be reset from settings |
+| Script       | Description                                                                                   |
+| ------------ | --------------------------------------------------------------------------------------------- |
+| AskAI        | Answers natural language queries using a local AI model                                       |
+| Weather      | Provides current weather using wttr.in with customizable output formatting                    |
+| Translate    | Detects non-English and translates into your chosen target language                           |
+| ButtsBot     | Replaces ∼5% of syllables in messages with "butt" — reply rate adjustable in settings         |
+| ClapThatBot  | Detects adjective+noun phrases and responds with "I'd clap that" — reply rate adjustable      |
+| MarkovChain  | Learns from chat to generate new phrases every 35 messages — brain can be reset from settings |
+| Sound Alerts | Plays sound files on command triggers with volume and queue control                           |
 
 ---
 
@@ -118,6 +121,7 @@ Third-party libraries:
 * **TwitchLib** — Twitch connection
 * **GPT4All** — Local AI inference engine
 * **Newtonsoft.Json** — JSON parsing for settings and Markov brain
+* **NAudio** — Audio playback for .wav and .mp3 support
 
 ---
 
@@ -130,5 +134,6 @@ Thanks to:
 * OpenNLP
 * CMUdict
 * Newtonsoft.Json
+* NAudio
 
 Built with ❤️ by **Ixitxachitl**
