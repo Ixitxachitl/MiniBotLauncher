@@ -843,6 +843,10 @@ public partial class MainForm : Form
             ForeColor = Color.White,
             Enabled = false
         };
+        AudioQueue.OnPlaybackStateChanged += (isPlaying) =>
+        {
+            btnStopAlerts.Invoke(() => btnStopAlerts.Enabled = isPlaying);
+        };
         btnStopAlerts.FlatAppearance.BorderSize = 0;
         btnStopAlerts.Click += (s, e) =>
         {
