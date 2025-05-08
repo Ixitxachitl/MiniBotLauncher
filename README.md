@@ -7,8 +7,8 @@
 
 # MiniBotLauncher
 
-| MiniBotLauncher is a lightweight, C#/.NET 8 Windows Forms application that connects to Twitch chat and enables several fun, chat-interactive scripts, including:<br><br>• **AskAI** — Ask natural language questions to a local AI model<br>• **Weather** — Get real-time weather info for cities<br>• **Translate** — Automatically translate non-English messages to English<br>• **ButtsBot** — Randomly replaces syllables in messages with "butt" for comedic effect<br>• **ClapThatBot** — Generates "I'd clap that" responses from adjective+noun pairs<br>• **MarkovChain** — Builds a Markov chain brain from chat and generates random responses<br>• **Sound Alerts** — Plays sound effects on specific commands; supports .mp3/.wav, volume control, and a stop/clear queue button | ![MiniBotLauncher Screenshot](https://github.com/user-attachments/assets/30713038-a61d-4613-a1b3-04b2e5deb53a) |
-| :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------: |
+| MiniBotLauncher is a lightweight, C#/.NET 8 Windows Forms application that connects to Twitch chat and enables several fun, chat-interactive scripts, including:<br><br>• **AskAI** — Ask natural language questions to a local AI model<br>• **Weather** — Get real-time weather info for cities<br>• **Translate** — Automatically translate non-English messages to English<br>• **ButtsBot** — Randomly replaces syllables in messages with "butt" for comedic effect<br>• **ClapThatBot** — Generates "I'd clap that" responses from adjective+noun pairs<br>• **MarkovChain** — Builds a Markov chain brain from chat and generates random responses<br>• **Sound Alerts** — Plays sound effects on specific commands; supports .mp3/.wav, volume control, and a stop/clear queue button<br>• **WalkOnScript** — Plays personalized entrance sounds for viewers when they first speak after the stream has started | ![MiniBotLauncher Screenshot](https://github.com/user-attachments/assets/f8a707de-af6a-468f-ae6c-f43f436fed5e) |
+| :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------: |
 
 ---
 
@@ -26,6 +26,7 @@
   * **ClapThatBot**: Adjustable reply frequency
   * **MarkovChain**: Reset brain with confirmation dialog
   * **Sound Alerts**: Add trigger-to-sound mappings, adjust volume, and stop/clear playback queue
+  * **WalkOnScript**: Assign personalized walk-on sounds per user, plays once per stream unless reset by reconnect or stream restart
 * Ignore messages from specific users using the Ignore List popup
 * Stylish dark mode UI with rounded corners and tooltips
 * Most scripts operate offline. Weather and Translate use public web APIs and require an internet connection, but no user setup is needed.
@@ -42,11 +43,11 @@ Optional:
 
 * Local GPT4All server with compatible models such as `llama3-8b-instruct` or `phi-3-mini-instruct`
 
-> ButtsBot and ClapThatBot use embedded offline models — no external services required.
+> ButtsBot and ClapThatBot use embedded offline models, no external services required.
 
 ---
 
-## 📚 Installation
+## 📙 Installation
 
 1. Download the latest release from GitHub
 2. Extract the contents
@@ -81,9 +82,10 @@ C:\Users\<YourName>\Documents\MiniBot\markov_brain_<channel>.json
 
 > AskAI requires GPT4All running locally. Now includes server/port configuration and automatic model listing.
 > Responses with trailing tags like `tutor:` or `response:` are automatically cleaned unless clearly part of the content.
-> ButtsBot replaces syllables at random — one syllable is always replaced if none were hit by chance.
+> ButtsBot replaces syllables at random, one syllable is always replaced if none were hit by chance.
 > MarkovChain will respond every 35 messages and can be reset via its settings.
 > Sound Alerts maps chat commands to sound files and queues them for playback with a short delay. It supports `.mp3` and `.wav`, adjustable volume, and a button to stop and clear the current queue.
+> WalkOnScript plays a specific sound the first time a user speaks during a stream. Triggers reset on reconnect or when stream start time changes.
 
 ---
 
@@ -98,6 +100,7 @@ C:\Users\<YourName>\Documents\MiniBot\markov_brain_<channel>.json
 | ClapThatBot  | Detects adjective+noun phrases and responds with "I'd clap that" — reply rate adjustable      |
 | MarkovChain  | Learns from chat to generate new phrases every 35 messages — brain can be reset from settings |
 | Sound Alerts | Plays sound files on command triggers with volume and queue control                           |
+| WalkOnScript | Plays a unique walk-on sound per user the first time they speak after the stream starts       |
 
 ---
 
