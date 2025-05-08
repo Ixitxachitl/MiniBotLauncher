@@ -4,32 +4,31 @@ using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-public class SoundAlertsForm : Form
+
+public class WalkOnSettingsForm : Form
 {
     private ListBox listBox;
-    private TextBox txtCommandInput;
-    private Button btnAdd, btnRemove, btnClose;
-    private Dictionary<string, string> soundMappings;
+    private TextBox txtUsernameInput;
+    private Button btnAdd, btnRemove, btnClose, btnCancel;
+    private Dictionary<string, string> walkOnMappings;
     private SettingsData settings;
 
     [DllImport("gdi32.dll", SetLastError = true)]
-    private static extern IntPtr CreateRoundRectRgn(
-        int nLeftRect, int nTopRect, int nRightRect, int nBottomRect,
-        int nWidthEllipse, int nHeightEllipse);
+    private static extern IntPtr CreateRoundRectRgn(int nLeftRect, int nTopRect, int nRightRect, int nBottomRect, int nWidthEllipse, int nHeightEllipse);
 
-    public SoundAlertsForm(SettingsData settingsData)
+    public WalkOnSettingsForm(SettingsData settingsData)
     {
         InitializeComponent();
         settings = settingsData;
-        soundMappings = new Dictionary<string, string>(settings.SoundAlertMappings);
+        walkOnMappings = new Dictionary<string, string>(settings.WalkOnSoundMappings);
 
-        foreach (var kvp in soundMappings)
+        foreach (var kvp in walkOnMappings)
             listBox.Items.Add($"{kvp.Key} → {kvp.Value}");
     }
 
     private void InitializeComponent()
     {
-        this.Text = "Sound Alerts";
+        this.Text = "Walk-On Sounds";
         this.Size = new Size(500, 380);
         this.FormBorderStyle = FormBorderStyle.FixedDialog;
         this.StartPosition = FormStartPosition.CenterParent;
@@ -50,7 +49,7 @@ public class SoundAlertsForm : Form
             BorderStyle = BorderStyle.FixedSingle
         };
 
-        txtCommandInput = new TextBox
+        txtUsernameInput = new TextBox
         {
             Left = 20,
             Top = listBox.Bottom + 15,
@@ -60,34 +59,34 @@ public class SoundAlertsForm : Form
             BorderStyle = BorderStyle.FixedSingle
         };
 
-        btnAdd = CreateStyledButton("+", txtCommandInput.Right + 10, txtCommandInput.Top - 5, 40);
+        btnAdd = CreateStyledButton("+", txtUsernameInput.Right + 10, txtUsernameInput.Top - 5, 40);
         btnAdd.Click += (s, e) =>
         {
-            string command = txtCommandInput.Text.Trim().ToLowerInvariant();
-            if (string.IsNullOrWhiteSpace(command))
+            string username = txtUsernameInput.Text.Trim().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(username))
             {
-                MessageBox.Show("Please enter a command before selecting a sound file.", "Missing Command");
+                MessageBox.Show("Please enter a username before selecting a sound file.", "Missing Username");
                 return;
             }
 
-            if (soundMappings.ContainsKey(command))
+            if (walkOnMappings.ContainsKey(username))
             {
-                MessageBox.Show("That command is already assigned to a sound file.", "Duplicate Command");
+                MessageBox.Show("That username already has a sound assigned.", "Duplicate Username");
                 return;
             }
 
             OpenFileDialog ofd = new OpenFileDialog
             {
                 Filter = "Audio Files (*.wav;*.mp3)|*.wav;*.mp3",
-                Title = "Select Sound File"
+                Title = "Select Walk-On Sound"
             };
 
             if (ofd.ShowDialog() == DialogResult.OK)
             {
                 string path = ofd.FileName;
-                soundMappings[command] = path;
-                listBox.Items.Add($"{command} → {path}");
-                txtCommandInput.Clear();
+                walkOnMappings[username] = path;
+                listBox.Items.Add($"{username} → {path}");
+                txtUsernameInput.Clear();
             }
         };
 
@@ -100,13 +99,13 @@ public class SoundAlertsForm : Form
                 if (idx != -1)
                 {
                     string key = selected.Substring(0, idx);
-                    soundMappings.Remove(key);
+                    walkOnMappings.Remove(key);
                     listBox.Items.Remove(selected);
                 }
             }
         };
 
-        Button btnCancel = CreateStyledButton("Cancel", listBox.Right - 90, btnRemove.Top, 90);
+        btnCancel = CreateStyledButton("Cancel", listBox.Right - 90, btnRemove.Top, 90);
         btnCancel.DialogResult = DialogResult.Cancel;
         btnCancel.Click += (s, e) => Close();
 
@@ -114,11 +113,12 @@ public class SoundAlertsForm : Form
         btnClose.DialogResult = DialogResult.OK;
         btnClose.Click += (s, e) =>
         {
-            settings.SoundAlertMappings = soundMappings;
+            settings.WalkOnSoundMappings = walkOnMappings;
+            WalkOnScript.SetSoundMappings(walkOnMappings);
             Close();
         };
 
-        Controls.AddRange(new Control[] { listBox, txtCommandInput, btnAdd, btnRemove, btnClose, btnCancel });
+        Controls.AddRange(new Control[] { listBox, txtUsernameInput, btnAdd, btnRemove, btnClose, btnCancel });
     }
 
     private Button CreateStyledButton(string text, int left, int top, int width)

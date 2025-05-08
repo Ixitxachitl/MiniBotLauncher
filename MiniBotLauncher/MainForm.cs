@@ -26,6 +26,7 @@ public partial class MainForm : Form
     private CheckBox toggleClapThat;
     private CheckBox toggleMarkovChain;
     private CheckBox toggleSoundAlerts;
+    private CheckBox toggleWalkOn;
     private Button btnGetToken;
     private Button btnConnect;
     private TextBox txtStatusLog;
@@ -93,6 +94,7 @@ public partial class MainForm : Form
         WeatherScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
         AskAIScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
         MarkovChainScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
+        AudioQueue.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
     }
 
     private void AddTopRightButtons()
@@ -184,7 +186,7 @@ public partial class MainForm : Form
 
             var label = new Label
             {
-                Text = "v0.2.7 ©2025 Ixitxachitl",
+                Text = "v0.2.8 ©2025 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20),
                 ForeColor = Color.White,
@@ -290,7 +292,7 @@ public partial class MainForm : Form
     private void InitializeComponent()
     {
         this.Text = "MiniBotLauncher";
-        this.Size = new Size(515, 680);
+        this.Size = new Size(515, 720);
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MaximizeBox = false;
         this.BackColor = Color.FromArgb(30, 30, 30);
@@ -746,9 +748,9 @@ public partial class MainForm : Form
 
         currentTop += 40;
 
+        // Add Sound Alerts toggle
         toggleSoundAlerts = CreateToggle("Sound Alerts", marginLeft);
         toggleSoundAlerts.Width -= 35;
-        // Restore rounded corners (both sides) on narrower toggle
         toggleSoundAlerts.Region = Region.FromHrgn(CreateRoundRectRgn(
             0, 0, toggleSoundAlerts.Width, toggleSoundAlerts.Height, 10, 10));
 
@@ -779,6 +781,39 @@ public partial class MainForm : Form
             this.BringToFront();
         };
 
+        // Add Walk-On toggle next to Sound Alerts
+        toggleWalkOn = CreateToggle("Walk-On", toggleSoundAlerts.Right + 45);
+        toggleWalkOn.Width -= 35;
+        toggleWalkOn.Region = Region.FromHrgn(CreateRoundRectRgn(
+            0, 0, toggleWalkOn.Width, toggleWalkOn.Height, 10, 10));
+
+        Button btnWalkOnSettings = new Button
+        {
+            Text = "⚙️",
+            Size = new Size(30, 30),
+            Location = new Point(toggleWalkOn.Right + 5, toggleWalkOn.Top + 3),
+            FlatStyle = FlatStyle.Flat,
+            BackColor = Color.Transparent,
+            ForeColor = Color.White
+        };
+        btnWalkOnSettings.FlatAppearance.BorderSize = 0;
+        btnWalkOnSettings.Click += (s, e) =>
+        {
+            bool wasTopMost = this.TopMost;
+            this.TopMost = false;
+            this.SendToBack();
+
+            var form = new WalkOnSettingsForm(settings);
+            if (form.ShowDialog(this) == DialogResult.OK)
+            {
+                SaveSettings();
+                WalkOnScript.SetSoundMappings(settings.WalkOnSoundMappings);
+            }
+
+            this.TopMost = wasTopMost;
+            this.BringToFront();
+        };
+
         // Volume slider
         trackVolume = new TrackBar
         {
@@ -786,14 +821,14 @@ public partial class MainForm : Form
             Maximum = 100,
             Value = 100,
             TickStyle = TickStyle.None,
-            Width = 190,
-            Left = btnSoundAlertsSettings.Right + 5,
-            Top = toggleSoundAlerts.Top + 7,
+            Width = 410,
+            Left = marginLeft,
+            Top = currentTop + 40,
             BackColor = Color.FromArgb(30, 30, 30)
         };
         trackVolume.Scroll += (s, e) =>
         {
-            SoundAlerts.SetVolume(trackVolume.Value / 100f);
+            AudioQueue.SetVolume(trackVolume.Value / 100f);
             SaveSettings();
         };
 
@@ -802,7 +837,7 @@ public partial class MainForm : Form
         {
             Text = "⏹️",
             Size = new Size(30, 30),
-            Location = new Point(trackVolume.Right, toggleSoundAlerts.Top + 3),
+            Location = new Point(trackVolume.Right, trackVolume.Top - 5),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
             ForeColor = Color.White,
@@ -811,7 +846,7 @@ public partial class MainForm : Form
         btnStopAlerts.FlatAppearance.BorderSize = 0;
         btnStopAlerts.Click += (s, e) =>
         {
-            SoundAlerts.StopAll();
+            AudioQueue.StopAll();
             btnStopAlerts.Enabled = false;
         };
 
@@ -821,13 +856,8 @@ public partial class MainForm : Form
             btnStopAlerts.Invoke(() => btnStopAlerts.Enabled = isPlaying);
         };
 
-        this.Controls.Add(toggleSoundAlerts);
-        this.Controls.Add(btnSoundAlertsSettings);
-        this.Controls.Add(trackVolume);
-        this.Controls.Add(btnStopAlerts);
+        currentTop = trackVolume.Bottom + 10;
 
-
-        currentTop += 55;
         txtStatusLog = new TextBox
         {
             Left = marginLeft,
@@ -846,16 +876,19 @@ public partial class MainForm : Form
 
         Controls.AddRange(new Control[]
         {
-        lblBotUsername, txtBotUsername,
-        lblClientID, txtClientID,
-        lblOAuthToken, txtOAuthToken,
-        btnGetToken, btnConnect,
-        lblChannel, txtChannelName,
-        lblScripts,
-        toggleAskAI, toggleWeather,
-        toggleTranslate, toggleButtsbot,
-        toggleClapThat, toggleMarkovChain,
-        txtStatusLog, lblConnectionStatus
+            lblBotUsername, txtBotUsername,
+            lblClientID, txtClientID,
+            lblOAuthToken, txtOAuthToken,
+            btnGetToken, btnConnect,
+            lblChannel, txtChannelName,
+            lblScripts,
+            toggleAskAI, toggleWeather,
+            toggleTranslate, toggleButtsbot,
+            toggleClapThat, toggleMarkovChain,
+            toggleSoundAlerts, btnSoundAlertsSettings,
+            toggleWalkOn, btnWalkOnSettings,
+            trackVolume, btnStopAlerts,
+            txtStatusLog, lblConnectionStatus
         });
 
         DisableAllToggles();
@@ -883,6 +916,7 @@ public partial class MainForm : Form
         toggle.CheckedChanged += toggleScript_CheckedChanged;
         return toggle;
     }
+
     private void btnConnect_Click(object sender, EventArgs e)
     {
         if (client != null && client.IsConnected)
@@ -1105,6 +1139,7 @@ public partial class MainForm : Form
             EnableAllToggles();
 
             MarkovChainScript.SetChannel(txtChannelName.Text);
+            SaveSettings();
 
             // Disable editing fields
             txtBotUsername.Enabled = false;
@@ -1167,6 +1202,7 @@ public partial class MainForm : Form
         // Ensure no nulls for collections
         settings.IgnoredUsernames ??= new List<string>();
         settings.SoundAlertMappings ??= new Dictionary<string, string>();
+        settings.WalkOnSoundMappings ??= new Dictionary<string, string>();
 
         // Update UI
         txtBotUsername.Text = settings.BotUsername ?? "";
@@ -1182,6 +1218,7 @@ public partial class MainForm : Form
         toggleClapThat.Checked = settings.ClapThatEnabled;
         toggleMarkovChain.Checked = settings.MarkovChainEnabled;
         toggleSoundAlerts.Checked = settings.SoundAlertsEnabled;
+        toggleWalkOn.Checked = settings.WalkOnEnabled;
 
         // Sync script settings
         AskAIScript.SetConfig(
@@ -1199,6 +1236,8 @@ public partial class MainForm : Form
         ClapThatBotScript.SetReplyChance(settings.ClapThat_ReplyChancePercent);
         ClapThatBotScript.SetReplacementWord(settings.ClapThat_ReplacementWord);
         SoundAlerts.SetSoundMappings(settings.SoundAlertMappings);
+        WalkOnScript.SetSoundMappings(settings.WalkOnSoundMappings);
+        WalkOnScript.SetLastKnownStreamStart(settings.WalkOnLastStreamStart);
 
         // Sync debug logging
         AskAIScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
@@ -1208,6 +1247,7 @@ public partial class MainForm : Form
         ClapThatBotScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
         MarkovChainScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
         SoundAlerts.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
+        WalkOnScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
 
         // Sync ignored list
         ignoredUsernames = new List<string>(settings.IgnoredUsernames);
@@ -1218,9 +1258,8 @@ public partial class MainForm : Form
             : new string('●', txtOAuthToken.Text.Length);
 
         trackVolume.Value = Math.Clamp(settings.SoundAlertsVolume, trackVolume.Minimum, trackVolume.Maximum);
-        SoundAlerts.SetVolume(trackVolume.Value / 100f);
+        AudioQueue.SetVolume(trackVolume.Value / 100f);
     }
-
 
     private void SaveSettings()
     {
@@ -1237,7 +1276,10 @@ public partial class MainForm : Form
         settings.MarkovChainEnabled = toggleMarkovChain.Checked;
         settings.IgnoredUsernames = ignoredUsernames;
         settings.SoundAlertsEnabled = toggleSoundAlerts.Checked;
-        settings.SoundAlertsVolume = trackVolume.Value;
+        settings.WalkOnEnabled = toggleWalkOn.Checked;
+        settings.SoundAlertsVolume = (int)(AudioQueue.GetVolume() * 100);
+        settings.WalkOnSoundMappings = WalkOnScript.GetSoundMappings();
+        settings.WalkOnLastStreamStart = WalkOnScript.GetLastKnownStreamStart();
 
         try
         {
@@ -1271,6 +1313,7 @@ public partial class MainForm : Form
         toggleClapThat.Enabled = false;
         toggleMarkovChain.Enabled = false;
         toggleSoundAlerts.Enabled = false;
+        toggleWalkOn.Enabled = false;
     }
 
     private void EnableAllToggles()
@@ -1282,6 +1325,7 @@ public partial class MainForm : Form
         toggleButtsbot.Enabled = true;
         toggleClapThat.Enabled = true;
         toggleSoundAlerts.Enabled = true;
+        toggleWalkOn.Enabled = true;
     }
 
     private void TextFields_TextChanged(object sender, EventArgs e) => UpdateToggleStates();
@@ -1305,6 +1349,7 @@ public partial class MainForm : Form
             toggleButtsbot.Enabled = basicReady;
             toggleClapThat.Enabled = basicReady;
             toggleSoundAlerts.Enabled = basicReady;
+            toggleWalkOn.Enabled = basicReady;
         }
         else
         {
@@ -1381,6 +1426,28 @@ public partial class MainForm : Form
         else
         {
             SoundAlerts.Enabled = false;
+        }
+
+        if (toggleWalkOn.Checked)
+        {
+            WalkOnScript.Enabled = true;
+            string newStart = await WalkOnScript.TryPlayWalkOn(
+                username,
+                settings.ChannelName.ToLowerInvariant(),
+                settings.ClientID,
+                settings.OAuthToken.Replace("oauth:", "")
+            );
+
+            if (!string.IsNullOrEmpty(newStart))
+            {
+                settings.WalkOnLastStreamStart = newStart;
+                WalkOnScript.SetLastKnownStreamStart(newStart);
+                SaveSettings();
+            }
+        }
+        else
+        {
+            WalkOnScript.Enabled = false;
         }
 
         // Command: !askai prompt

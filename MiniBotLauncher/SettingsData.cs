@@ -14,6 +14,7 @@ public class SettingsData
     public bool ClapThatEnabled { get; set; }
     public bool MarkovChainEnabled { get; set; }
     public bool SoundAlertsEnabled { get; set; }
+    public bool WalkOnEnabled { get; set; }
 
     public List<string> IgnoredUsernames { get; set; } = new();
 
@@ -42,6 +43,10 @@ public class SettingsData
     // Sound Alerts-specifc settings
     public Dictionary<string, string> SoundAlertMappings { get; set; } = new();
     public int SoundAlertsVolume { get; set; } = 100; // percent (0–100)
+
+    // Walk-On-specific settings
+    public Dictionary<string, string> WalkOnSoundMappings { get; set; } = new();
+    public string WalkOnLastStreamStart { get; set; } = "";
 
 
 }
