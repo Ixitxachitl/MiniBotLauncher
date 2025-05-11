@@ -1,0 +1,9 @@
+{
+  "CompanyName": "Ixitxachitl",
+  "FileDescription": "GPT4All Forwarder",
+  "ProductName": "GPT4All Forwarder",
+  "InternalName": "gpt4all_forwarder_gui.exe",
+  "OriginalFilename": "gpt4all_forwarder_gui.exe",
+  "IconPath": "icon.ico",
+  "ManifestPath": "test.manifest"
+}
