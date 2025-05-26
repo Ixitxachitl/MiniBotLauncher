@@ -97,16 +97,34 @@ public partial class MainForm : Form
         AudioQueue.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
     }
 
-    private void AddTopRightButtons()
+    public static Bitmap RenderEmojiToBitmap(string emoji, int size = 24)
     {
+        // Use high DPI for sharpness
+        Bitmap bmp = new Bitmap(size, size);
+        using (Graphics g = Graphics.FromImage(bmp))
+        {
+            g.Clear(Color.Transparent);
+            using (Font font = new Font("Segoe UI Emoji", size - 4, FontStyle.Regular, GraphicsUnit.Pixel))
+            using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+            {
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+                g.DrawString(emoji, font, Brushes.White, new RectangleF(0, 0, size, size), sf);
+            }
+        }
+        return bmp;
+    }
+
+    private void AddTopRightButtons()
+    {   
         Button btnIgnoreList = new Button
         {
-            Text = "📄",
+            Image = RenderEmojiToBitmap("📄", 24),
             Size = new Size(30, 30),
             Location = new Point(this.ClientSize.Width - 160, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI Emoji", 14, FontStyle.Regular)
         };
         btnIgnoreList.FlatAppearance.BorderSize = 0;
         btnIgnoreList.Click += (s, e) =>
@@ -128,12 +146,13 @@ public partial class MainForm : Form
 
         btnPinTop = new Button
         {
-            Text = "📌",
+            Image = RenderEmojiToBitmap("📌", 24),
             Size = new Size(30, 30),
             Location = new Point(this.ClientSize.Width - 125, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI Emoji", 14, FontStyle.Regular)
         };
         btnPinTop.FlatAppearance.BorderSize = 0;
         btnPinTop.Click += (s, e) =>
@@ -144,24 +163,26 @@ public partial class MainForm : Form
 
         btnMinimizeTray = new Button
         {
-            Text = "🗕",
+            Image = RenderEmojiToBitmap("_", 24),
             Size = new Size(30, 30),
             Location = new Point(this.ClientSize.Width - 90, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI Emoji", 14, FontStyle.Regular)
         };
         btnMinimizeTray.FlatAppearance.BorderSize = 0;
         btnMinimizeTray.Click += (s, e) => { this.Hide(); trayIcon.Visible = true; };
 
         btnInfo = new Button
         {
-            Text = "ℹ️",
+            Image = RenderEmojiToBitmap("ℹ️", 24),
             Size = new Size(30, 30),
             Location = new Point(this.ClientSize.Width - 55, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White
+            ForeColor = Color.White,
+            Font = new Font("Segoe UI Emoji", 14, FontStyle.Regular)
         };
         btnInfo.FlatAppearance.BorderSize = 0;
         btnInfo.Click += (s, e) =>
@@ -256,10 +277,11 @@ public partial class MainForm : Form
             this.BringToFront();
         };
 
+        this.Controls.Add(btnIgnoreList);
         this.Controls.Add(btnPinTop);
         this.Controls.Add(btnMinimizeTray);
         this.Controls.Add(btnInfo);
-        this.Controls.Add(btnIgnoreList);
+
         var tooltip = new ToolTip();
         tooltip.SetToolTip(btnIgnoreList, "Manage Ignored Users");
         tooltip.SetToolTip(btnPinTop, "Pin on Top");
