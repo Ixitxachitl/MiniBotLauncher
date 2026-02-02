@@ -6,6 +6,7 @@ public class SettingsData
     public string ClientID { get; set; }
     public string OAuthToken { get; set; }
     public string ChannelName { get; set; }
+    public List<string> ChannelList { get; set; } = new();
 
     public bool AskAIEnabled { get; set; }
     public bool WeatherEnabled { get; set; }

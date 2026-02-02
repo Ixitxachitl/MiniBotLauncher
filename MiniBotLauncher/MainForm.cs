@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Net;
+using System.Net.Http;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -14,11 +15,10 @@ using System.Reflection;
 public partial class MainForm : Form
 {
     private TwitchClient client;
-    private TextBox txtBotUsername;
     private TextBox txtClientID;
-    private TextBox txtOAuthToken;
-    private Label lblOAuthTokenDisplay;
-    private TextBox txtChannelName;
+    private ComboBox cboChannelName;
+    private Button btnAddChannel;
+    private Button btnRemoveChannel;
     private CheckBox toggleAskAI;
     private CheckBox toggleWeather;
     private CheckBox toggleTranslate;
@@ -27,10 +27,16 @@ public partial class MainForm : Form
     private CheckBox toggleMarkovChain;
     private CheckBox toggleSoundAlerts;
     private CheckBox toggleWalkOn;
-    private Button btnGetToken;
+    private Button btnLogin;
+    private Button btnLogout;
     private Button btnConnect;
+    private Label lblLoggedInAs;
     private TextBox txtStatusLog;
     private Label lblConnectionStatus;
+    
+    // Store credentials (not shown in UI)
+    private string storedUsername = "";
+    private string storedOAuthToken = "";
     private static readonly string SettingsFile = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
         "MiniBot",
@@ -82,9 +88,7 @@ public partial class MainForm : Form
         ClapThatBotScript.SetReplyChance(settings.ClapThat_ReplyChancePercent);
         ButtsBotScript.SetReplacementWord(settings.ButtsBot_ReplacementWord);
 
-        lblOAuthTokenDisplay.Text = string.IsNullOrWhiteSpace(txtOAuthToken.Text)
-            ? ""
-            : new string('●', txtOAuthToken.Text.Length);
+        UpdateLoginUI();
         UpdateToggleStates();
         this.FormClosing += MainForm_FormClosing;
 
@@ -397,48 +401,117 @@ public partial class MainForm : Form
             return toggle;
         }
 
-        Label lblBotUsername = CreateLabel("Bot Username");
-        txtBotUsername = CreateTextBox();
-        txtBotUsername.TextChanged += TextFields_TextChanged;
-
+        // Client ID field
         Label lblClientID = CreateLabel("Client ID");
         txtClientID = CreateTextBox(true);
         txtClientID.TextChanged += TextFields_TextChanged;
 
+        // Channel to Join field
         Label lblChannel = CreateLabel("Channel to Join");
-        txtChannelName = CreateTextBox();
-        txtChannelName.TextChanged += TextFields_TextChanged;
-
-        Label lblOAuthToken = CreateLabel("OAuth Token");
-        txtOAuthToken = CreateTextBox(true);
-        txtOAuthToken.Visible = false;
-        txtOAuthToken.ReadOnly = true;
-        txtOAuthToken.TabStop = false;
-        txtOAuthToken.TextChanged += TextFields_TextChanged;
-
-        lblOAuthTokenDisplay = new Label
+        cboChannelName = new ComboBox
         {
-            Text = string.IsNullOrWhiteSpace(txtOAuthToken.Text) ? "" : new string('●', txtOAuthToken.Text.Length),
-            Left = txtOAuthToken.Left,
-            Top = txtOAuthToken.Top,
-            Width = txtOAuthToken.Width,
-            Height = txtOAuthToken.Height,
-            ForeColor = Color.LightGray,
+            Left = inputLeft,
+            Top = currentTop - spacing,
+            Width = 250,
+            BackColor = Color.FromArgb(50, 50, 50),
+            ForeColor = foreColor,
+            FlatStyle = FlatStyle.Flat,
+            DropDownStyle = ComboBoxStyle.DropDown
+        };
+        cboChannelName.TextChanged += TextFields_TextChanged;
+        cboChannelName.SelectedIndexChanged += TextFields_TextChanged;
+
+        btnAddChannel = new Button
+        {
+            Text = "+",
+            Left = cboChannelName.Right + 5,
+            Top = currentTop - spacing - 2,
+            Width = 30,
+            Height = 26,
+            BackColor = buttonColor,
+            ForeColor = foreColor,
+            FlatStyle = FlatStyle.Flat
+        };
+        btnAddChannel.FlatAppearance.BorderSize = 0;
+        btnAddChannel.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnAddChannel.Width, btnAddChannel.Height, 8, 8));
+        btnAddChannel.Click += (s, e) =>
+        {
+            string channel = cboChannelName.Text.Trim().ToLowerInvariant();
+            if (!string.IsNullOrWhiteSpace(channel) && !cboChannelName.Items.Contains(channel))
+            {
+                cboChannelName.Items.Add(channel);
+                cboChannelName.SelectedItem = channel;
+                SaveSettings();
+                Log($"Added channel: {channel}");
+            }
+        };
+
+        btnRemoveChannel = new Button
+        {
+            Text = "-",
+            Left = btnAddChannel.Right + 5,
+            Top = currentTop - spacing - 2,
+            Width = 30,
+            Height = 26,
+            BackColor = buttonColor,
+            ForeColor = foreColor,
+            FlatStyle = FlatStyle.Flat
+        };
+        btnRemoveChannel.FlatAppearance.BorderSize = 0;
+        btnRemoveChannel.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnRemoveChannel.Width, btnRemoveChannel.Height, 8, 8));
+        btnRemoveChannel.Click += (s, e) =>
+        {
+            if (cboChannelName.SelectedItem != null)
+            {
+                string removed = cboChannelName.SelectedItem.ToString();
+                cboChannelName.Items.Remove(cboChannelName.SelectedItem);
+                if (cboChannelName.Items.Count > 0)
+                    cboChannelName.SelectedIndex = 0;
+                else
+                    cboChannelName.Text = "";
+                SaveSettings();
+                Log($"Removed channel: {removed}");
+            }
+        };
+
+        this.Controls.Add(btnAddChannel);
+        this.Controls.Add(btnRemoveChannel);
+
+        // Login status label
+        Label lblLoginStatus = CreateLabel("Account");
+        lblLoggedInAs = new Label
+        {
+            Text = "Not logged in",
+            Left = inputLeft,
+            Top = currentTop - spacing,
+            Width = 320,
+            ForeColor = Color.Gray,
             BackColor = Color.Transparent,
-            BorderStyle = BorderStyle.None,  // ✅ Remove box
             TextAlign = ContentAlignment.MiddleLeft
         };
-        this.Controls.Add(lblOAuthTokenDisplay);
-        lblOAuthTokenDisplay.BringToFront();
+        this.Controls.Add(lblLoggedInAs);
 
-        btnGetToken = CreateButton("Get Token");
-        btnGetToken.Top = currentTop;
-        btnGetToken.Left = marginLeft;
-        btnGetToken.Click += btnGetToken_Click;
+        // Login button
+        btnLogin = CreateButton("Login");
+        btnLogin.Top = currentTop;
+        btnLogin.Left = marginLeft;
+        btnLogin.Width = 100;
+        btnLogin.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, btnLogin.Width, btnLogin.Height, 10, 10));
+        btnLogin.Click += btnLogin_Click;
 
+        // Logout button
+        btnLogout = CreateButton("Logout");
+        btnLogout.Top = currentTop;
+        btnLogout.Left = btnLogin.Right + 10;
+        btnLogout.Width = 100;
+        btnLogout.Enabled = false;
+        btnLogout.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, btnLogout.Width, btnLogout.Height, 10, 10));
+        btnLogout.Click += btnLogout_Click;
+
+        // Connect button
         btnConnect = CreateButton("Connect");
         btnConnect.Top = currentTop;
-        btnConnect.Left = btnGetToken.Right + toggleGap + 120;
+        btnConnect.Left = 315;
         btnConnect.Click += btnConnect_Click;
 
         lblConnectionStatus = new Label
@@ -716,7 +789,7 @@ public partial class MainForm : Form
 
             if (dialog.ShowDialog(this) == DialogResult.OK)
             {
-                string channel = txtChannelName.Text.ToLowerInvariant();
+                string channel = cboChannelName.Text.ToLowerInvariant();
                 MarkovChainScript.SetChannel(channel);
 
                 string brainFile = Path.Combine(
@@ -885,11 +958,10 @@ public partial class MainForm : Form
 
         Controls.AddRange(new Control[]
         {
-            lblBotUsername, txtBotUsername,
             lblClientID, txtClientID,
-            lblOAuthToken, txtOAuthToken,
-            btnGetToken, btnConnect,
-            lblChannel, txtChannelName,
+            lblChannel, cboChannelName,
+            lblLoginStatus, lblLoggedInAs,
+            btnLogin, btnLogout, btnConnect,
             lblScripts,
             toggleAskAI, toggleWeather,
             toggleTranslate, toggleButtsbot,
@@ -942,8 +1014,105 @@ public partial class MainForm : Form
         }
     }
 
+    private void btnLogin_Click(object sender, EventArgs e) => StartOAuthFlow(txtClientID.Text);
+    
+    private void btnLogout_Click(object sender, EventArgs e)
+    {
+        storedUsername = "";
+        storedOAuthToken = "";
+        UpdateLoginUI();
+        SaveSettings();
+        Log("Logged out from Twitch.");
+    }
 
-    private void btnGetToken_Click(object sender, EventArgs e) => StartOAuthFlow(txtClientID.Text);
+    private void UpdateLoginUI()
+    {
+        bool isLoggedIn = !string.IsNullOrWhiteSpace(storedOAuthToken) && !string.IsNullOrWhiteSpace(storedUsername);
+        
+        if (isLoggedIn)
+        {
+            lblLoggedInAs.Text = $"Logged in as: {storedUsername}";
+            lblLoggedInAs.ForeColor = Color.LightGreen;
+            btnLogin.Enabled = false;
+            btnLogout.Enabled = true;
+        }
+        else
+        {
+            lblLoggedInAs.Text = "Not logged in";
+            lblLoggedInAs.ForeColor = Color.Gray;
+            btnLogin.Enabled = true;
+            btnLogout.Enabled = false;
+        }
+        
+        UpdateToggleStates();
+    }
+
+    private async Task<string> ValidateTokenAndGetUsername(string token)
+    {
+        try
+        {
+            using var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+            
+            var response = await httpClient.GetAsync("https://api.twitch.tv/helix/users");
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                // Try the validate endpoint for more info
+                httpClient.DefaultRequestHeaders.Clear();
+                httpClient.DefaultRequestHeaders.Add("Authorization", $"OAuth {token}");
+                var validateResponse = await httpClient.GetAsync("https://id.twitch.tv/oauth2/validate");
+                
+                if (validateResponse.IsSuccessStatusCode)
+                {
+                    string validateJson = await validateResponse.Content.ReadAsStringAsync();
+                    using var validateDoc = JsonDocument.Parse(validateJson);
+                    if (validateDoc.RootElement.TryGetProperty("login", out var loginProp))
+                    {
+                        return loginProp.GetString();
+                    }
+                }
+                return null;
+            }
+            
+            // Need Client-ID header for Helix API
+            httpClient.DefaultRequestHeaders.Add("Client-ID", txtClientID.Text);
+            response = await httpClient.GetAsync("https://api.twitch.tv/helix/users");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                string json = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+                var data = doc.RootElement.GetProperty("data");
+                if (data.GetArrayLength() > 0)
+                {
+                    return data[0].GetProperty("login").GetString();
+                }
+            }
+            
+            // Fallback to validate endpoint
+            httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.Add("Authorization", $"OAuth {token}");
+            var fallbackResponse = await httpClient.GetAsync("https://id.twitch.tv/oauth2/validate");
+            if (fallbackResponse.IsSuccessStatusCode)
+            {
+                string fallbackJson = await fallbackResponse.Content.ReadAsStringAsync();
+                using var fallbackDoc = JsonDocument.Parse(fallbackJson);
+                if (fallbackDoc.RootElement.TryGetProperty("login", out var loginProp))
+                {
+                    return loginProp.GetString();
+                }
+            }
+            
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Log($"Error validating token: {ex.Message}");
+            return null;
+        }
+    }
+
     private HttpListener oauthListener;
 
     private void StartOAuthFlow(string clientId)
@@ -958,7 +1127,8 @@ public partial class MainForm : Form
                      $"?client_id={clientId}" +
                      $"&redirect_uri=http://localhost:8750/callback/" +
                      $"&response_type=token" +
-                     $"&scope=chat:read+chat:edit";
+                     $"&scope=chat:read+chat:edit" +
+                     $"&force_verify=true";
 
         try
         {
@@ -1052,12 +1222,31 @@ public partial class MainForm : Form
 
                     if (!string.IsNullOrWhiteSpace(token))
                     {
-                        Invoke(new Action(() => txtOAuthToken.Text = token));
-                        Invoke(new Action(() => {
-                            txtOAuthToken.Text = token;
-                            lblOAuthTokenDisplay.Text = new string('●', token.Length);  // <- dynamic masking
-                        }));
-                        Log("OAuth token captured successfully!");
+                        Log("OAuth token captured, fetching username...");
+                        
+                        // Fetch username from Twitch API
+                        _ = Task.Run(async () =>
+                        {
+                            string username = await ValidateTokenAndGetUsername(token);
+                            
+                            Invoke(new Action(() =>
+                            {
+                                if (!string.IsNullOrWhiteSpace(username))
+                                {
+                                    storedOAuthToken = token;
+                                    storedUsername = username;
+                                    UpdateLoginUI();
+                                    SaveSettings();
+                                    Log($"Logged in as: {username}");
+                                }
+                                else
+                                {
+                                    Log("Failed to get username from Twitch API. Token may be invalid.");
+                                    MessageBox.Show("Failed to validate token with Twitch. Please try again.", 
+                                        "Login Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                }
+                            }));
+                        });
                     }
                     else
                     {
@@ -1091,7 +1280,7 @@ public partial class MainForm : Form
     {
         if (!IsBasicAuthValid())
         {
-            Log("Missing bot username, OAuth token, or channel name. Cannot connect.");
+            Log("Missing credentials or channel name. Cannot connect.");
             return;
         }
 
@@ -1100,9 +1289,9 @@ public partial class MainForm : Form
         client = new TwitchClient();
         client.AutoReListenOnException = false;
 
-        string finalOAuth = txtOAuthToken.Text.StartsWith("oauth:") ? txtOAuthToken.Text : "oauth:" + txtOAuthToken.Text;
-        ConnectionCredentials credentials = new ConnectionCredentials(txtBotUsername.Text, finalOAuth);
-        client.Initialize(credentials, txtChannelName.Text);
+        string finalOAuth = storedOAuthToken.StartsWith("oauth:") ? storedOAuthToken : "oauth:" + storedOAuthToken;
+        ConnectionCredentials credentials = new ConnectionCredentials(storedUsername, finalOAuth);
+        client.Initialize(credentials, cboChannelName.Text);
 
         // Register handlers
         onConnected = Client_OnConnected;
@@ -1164,14 +1353,14 @@ public partial class MainForm : Form
             btnConnect.Text = "Disconnect";
             EnableAllToggles();
 
-            MarkovChainScript.SetChannel(txtChannelName.Text);
+            MarkovChainScript.SetChannel(cboChannelName.Text);
             SaveSettings();
 
-            // Disable editing fields
-            txtBotUsername.Enabled = false;
+            // Disable editing fields while connected
             txtClientID.Enabled = false;
-            txtChannelName.Enabled = false;
-            btnGetToken.Enabled = false;
+            cboChannelName.Enabled = false;
+            btnLogin.Enabled = false;
+            btnLogout.Enabled = false;
         }));
     }
 
@@ -1186,10 +1375,10 @@ public partial class MainForm : Form
             DisableAllToggles();
 
             // Re-enable fields
-            txtBotUsername.Enabled = true;
             txtClientID.Enabled = true;
-            txtChannelName.Enabled = true;
-            btnGetToken.Enabled = true;
+            cboChannelName.Enabled = true;
+            btnLogin.Enabled = true;
+            btnLogout.Enabled = true;
 
             // 🛑 Prevent reconnect: force cleanup and null out the client
             if (client != null)
@@ -1229,12 +1418,26 @@ public partial class MainForm : Form
         settings.IgnoredUsernames ??= new List<string>();
         settings.SoundAlertMappings ??= new Dictionary<string, string>();
         settings.WalkOnSoundMappings ??= new Dictionary<string, string>();
+        settings.ChannelList ??= new List<string>();
 
-        // Update UI
-        txtBotUsername.Text = settings.BotUsername ?? "";
+        // Update UI and stored credentials
         txtClientID.Text = settings.ClientID ?? "";
-        txtOAuthToken.Text = settings.OAuthToken ?? "";
-        txtChannelName.Text = settings.ChannelName ?? "";
+        
+        // Load channel list into ComboBox
+        cboChannelName.Items.Clear();
+        foreach (var channel in settings.ChannelList)
+        {
+            cboChannelName.Items.Add(channel);
+        }
+        // Select the last used channel, or first in list
+        if (!string.IsNullOrWhiteSpace(settings.ChannelName) && cboChannelName.Items.Contains(settings.ChannelName))
+            cboChannelName.SelectedItem = settings.ChannelName;
+        else if (cboChannelName.Items.Count > 0)
+            cboChannelName.SelectedIndex = 0;
+        else
+            cboChannelName.Text = settings.ChannelName ?? "";
+        storedUsername = settings.BotUsername ?? "";
+        storedOAuthToken = settings.OAuthToken ?? "";
 
         // Sync toggles
         toggleAskAI.Checked = settings.AskAIEnabled;
@@ -1278,10 +1481,8 @@ public partial class MainForm : Form
         // Sync ignored list
         ignoredUsernames = new List<string>(settings.IgnoredUsernames);
 
-        // Update display
-        lblOAuthTokenDisplay.Text = string.IsNullOrWhiteSpace(txtOAuthToken.Text)
-            ? ""
-            : new string('●', txtOAuthToken.Text.Length);
+        // Update login UI
+        UpdateLoginUI();
 
         trackVolume.Value = Math.Clamp(settings.SoundAlertsVolume, trackVolume.Minimum, trackVolume.Maximum);
         AudioQueue.SetVolume(trackVolume.Value / 100f);
@@ -1290,10 +1491,11 @@ public partial class MainForm : Form
     private void SaveSettings()
     {
         // Just update the existing instance
-        settings.BotUsername = txtBotUsername.Text;
+        settings.BotUsername = storedUsername;
         settings.ClientID = txtClientID.Text;
-        settings.OAuthToken = txtOAuthToken.Text;
-        settings.ChannelName = txtChannelName.Text;
+        settings.OAuthToken = storedOAuthToken;
+        settings.ChannelName = cboChannelName.Text;
+        settings.ChannelList = cboChannelName.Items.Cast<string>().ToList();
         settings.AskAIEnabled = toggleAskAI.Checked;
         settings.WeatherEnabled = toggleWeather.Checked;
         settings.TranslateEnabled = toggleTranslate.Checked;
@@ -1358,15 +1560,14 @@ public partial class MainForm : Form
 
     private void UpdateToggleStates()
     {
+        bool isLoggedIn = !string.IsNullOrWhiteSpace(storedOAuthToken) && !string.IsNullOrWhiteSpace(storedUsername);
         bool basicReady = IsBasicAuthValid();
-        bool getTokenReady = !string.IsNullOrWhiteSpace(txtBotUsername.Text) &&
-                             !string.IsNullOrWhiteSpace(txtClientID.Text) &&
-                             lblConnectionStatus.Text != "Connected";
+        bool loginReady = !string.IsNullOrWhiteSpace(txtClientID.Text) && !isLoggedIn;
 
         btnConnect.Enabled = basicReady;
-        btnGetToken.Enabled = getTokenReady;
+        btnLogin.Enabled = loginReady;
 
-        if (lblConnectionStatus.Text == "Connected")
+        if (lblConnectionStatus.ForeColor == Color.Green) // Connected
         {
             toggleAskAI.Enabled = basicReady;
             toggleWeather.Enabled = basicReady;
@@ -1384,10 +1585,10 @@ public partial class MainForm : Form
     }
 
     private bool IsBasicAuthValid() =>
-        !string.IsNullOrWhiteSpace(txtBotUsername.Text) &&
+        !string.IsNullOrWhiteSpace(storedUsername) &&
         !string.IsNullOrWhiteSpace(txtClientID.Text) &&
-        !string.IsNullOrWhiteSpace(txtOAuthToken.Text) &&
-        !string.IsNullOrWhiteSpace(txtChannelName.Text);
+        !string.IsNullOrWhiteSpace(storedOAuthToken) &&
+        !string.IsNullOrWhiteSpace(cboChannelName.Text);
 
     private void Log(string message)
     {
@@ -1432,7 +1633,7 @@ public partial class MainForm : Form
         string channel = e.ChatMessage.Channel;
         string processedMessage = message;
 
-        if (username.Equals(txtBotUsername.Text, StringComparison.OrdinalIgnoreCase))
+        if (username.Equals(storedUsername, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
@@ -1524,7 +1725,7 @@ public partial class MainForm : Form
         
         if (toggleClapThat.Checked)
         {
-            string clapResponse = await ClapThatBotScript.Process(message, username, txtBotUsername.Text);
+            string clapResponse = await ClapThatBotScript.Process(message, username, storedUsername);
             if (!string.IsNullOrWhiteSpace(clapResponse))
             {
                 client.SendMessage(channel, clapResponse);
@@ -1534,7 +1735,7 @@ public partial class MainForm : Form
         if (toggleMarkovChain.Checked)
         {
             MarkovChainScript.SetChannel(channel);
-            string markov = MarkovChainScript.LearnAndMaybeRespond(message, username, txtBotUsername.Text);
+            string markov = MarkovChainScript.LearnAndMaybeRespond(message, username, storedUsername);
             if (!string.IsNullOrWhiteSpace(markov))
             {
                 client.SendMessage(channel, markov);
