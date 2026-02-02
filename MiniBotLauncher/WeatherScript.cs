@@ -6,7 +6,7 @@ public static class WeatherScript
 {
     private static readonly HttpClient httpClient = new HttpClient();
 
-    public static Func<string, Task> DebugLog = null;
+    public static Func<string, Task>? DebugLog = null;
 
     private static string formatString = "2";
 

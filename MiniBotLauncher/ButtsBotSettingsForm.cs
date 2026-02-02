@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Drawing;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 public class ButtsBotSettingsForm : Form
@@ -10,30 +9,15 @@ public class ButtsBotSettingsForm : Form
     private SettingsData settings;
     private TextBox txtReplacement;
 
-    [DllImport("gdi32.dll", SetLastError = true)]
-    private static extern IntPtr CreateRoundRectRgn(
-        int nLeftRect, int nTopRect, int nRightRect, int nBottomRect,
-        int nWidthEllipse, int nHeightEllipse);
-
     public ButtsBotSettingsForm(SettingsData currentSettings)
     {
         this.settings = currentSettings;
 
         this.Text = "ButtsBot Settings";
         this.Size = new Size(400, 250);
-        this.FormBorderStyle = FormBorderStyle.FixedDialog;
-        this.StartPosition = FormStartPosition.CenterParent;
-        this.BackColor = Color.FromArgb(30, 30, 30);
-        this.ForeColor = Color.White;
-        this.Font = new Font("Segoe UI", 10F);
+        Theme.ApplyToDialog(this);
 
-        var lbl = new Label
-        {
-            Text = "Reply Frequency",
-            Left = 20,
-            Top = 20,
-            AutoSize = true
-        };
+        var lbl = Theme.CreateLabel("Reply Frequency", 20, 20);
 
         slider = new TrackBar
         {
@@ -46,51 +30,19 @@ public class ButtsBotSettingsForm : Form
             TickFrequency = 10
         };
 
-        lblValue = new Label
-        {
-            Text = $"{slider.Value}%",
-            Left = slider.Right + 10,
-            Top = slider.Top + 5,
-            AutoSize = true
-        };
+        lblValue = Theme.CreateLabel($"{slider.Value}%", slider.Right + 10, slider.Top + 5);
 
         slider.ValueChanged += (s, e) =>
         {
             lblValue.Text = $"{slider.Value}%";
         };
 
-        var lblReplacement = new Label
-        {
-            Text = "Replacement Word",
-            Left = 20,
-            Top = 90,
-            AutoSize = true
-        };
+        var lblReplacement = Theme.CreateLabel("Replacement Word", 20, 90);
+        txtReplacement = Theme.CreateTextBox(20, 115, 150);
+        txtReplacement.Text = settings.ButtsBot_ReplacementWord ?? "butt";
 
-        txtReplacement = new TextBox
-        {
-            Left = 20,
-            Top = 115,
-            Width = 150,
-            Text = settings.ButtsBot_ReplacementWord ?? "butt"
-        };
-
-        var btnOK = new Button
-        {
-            Text = "OK",
-            DialogResult = DialogResult.OK,
-            Left = this.ClientSize.Width - 180,
-            Top = 160,
-            Width = 70,
-            Height = 35,
-            BackColor = Color.FromArgb(50, 50, 50),
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat
-        };
-        btnOK.FlatAppearance.BorderSize = 0;
-        btnOK.FlatAppearance.MouseOverBackColor = Color.FromArgb(70, 70, 70);
-        btnOK.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnOK.Width, btnOK.Height, 10, 10));
-
+        var btnOK = Theme.CreateButton("OK", this.ClientSize.Width - 180, 160);
+        btnOK.DialogResult = DialogResult.OK;
         btnOK.Click += (s, e) =>
         {
             settings.ButtsBot_ReplyChancePercent = slider.Value;
@@ -98,21 +50,8 @@ public class ButtsBotSettingsForm : Form
             this.Close();
         };
 
-        var btnCancel = new Button
-        {
-            Text = "Cancel",
-            DialogResult = DialogResult.Cancel,
-            Left = this.ClientSize.Width - 95,
-            Top = 160,
-            Width = 70,
-            Height = 35,
-            BackColor = Color.FromArgb(50, 50, 50),
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat
-        };
-        btnCancel.FlatAppearance.BorderSize = 0;
-        btnCancel.FlatAppearance.MouseOverBackColor = Color.FromArgb(70, 70, 70);
-        btnCancel.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnCancel.Width, btnCancel.Height, 10, 10));
+        var btnCancel = Theme.CreateButton("Cancel", this.ClientSize.Width - 95, 160);
+        btnCancel.DialogResult = DialogResult.Cancel;
 
         this.Controls.AddRange(new Control[] { lbl, slider, lblValue, lblReplacement, txtReplacement, btnOK, btnCancel });
     }

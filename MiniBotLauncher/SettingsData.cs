@@ -2,10 +2,10 @@
 
 public class SettingsData
 {
-    public string BotUsername { get; set; }
-    public string ClientID { get; set; }
-    public string OAuthToken { get; set; }
-    public string ChannelName { get; set; }
+    public string BotUsername { get; set; } = "";
+    public string ClientID { get; set; } = "";
+    public string OAuthToken { get; set; } = "";
+    public string ChannelName { get; set; } = "";
     public List<string> ChannelList { get; set; } = new();
 
     public bool AskAIEnabled { get; set; }
@@ -26,7 +26,6 @@ public class SettingsData
     public int AskAI_MaxTokens { get; set; } = 50;
     public string AskAI_SystemMessage { get; set; } = "";
 
-
     // Weather-specific settings
     public string Weather_FormatString { get; set; } = "2";
 
@@ -41,7 +40,7 @@ public class SettingsData
     public int ClapThat_ReplyChancePercent { get; set; } = 2;
     public string ClapThat_ReplacementWord { get; set; } = "clap";
 
-    // Sound Alerts-specifc settings
+    // Sound Alerts-specific settings
     public Dictionary<string, string> SoundAlertMappings { get; set; } = new();
     public int SoundAlertsVolume { get; set; } = 100; // percent (0–100)
 
@@ -49,5 +48,7 @@ public class SettingsData
     public Dictionary<string, string> WalkOnSoundMappings { get; set; } = new();
     public string WalkOnLastStreamStart { get; set; } = "";
 
-
+    // Markov Chain-specific settings
+    public int Markov_MessageInterval { get; set; } = 35;
+    public List<string> Markov_BannedWords { get; set; } = new();
 }

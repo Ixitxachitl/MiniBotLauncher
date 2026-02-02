@@ -20,9 +20,9 @@ public static class ButtsBotScript
         replyChancePercent = Math.Clamp(percent, 1, 100);
     }
 
-    public static Func<string, Task> DebugLog = null;
+    public static Func<string, Task>? DebugLog = null;
 
-    public static async Task<string> Process(string message, string username)
+    public static async Task<string?> Process(string message, string username)
     {
         if (string.IsNullOrWhiteSpace(message) || string.IsNullOrWhiteSpace(username))
             return null;
@@ -75,7 +75,7 @@ public static class ButtsBotScript
 
             var syllableList = new List<string>(syllables);
             syllableMap[i] = syllableList;
-            modifiedTokens.Add(null);
+            modifiedTokens.Add(null!);
 
             for (int j = 0; j < syllableList.Count; j++)
             {

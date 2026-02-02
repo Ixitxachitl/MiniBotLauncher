@@ -23,9 +23,9 @@ public static class ClapThatBotScript
         replyChancePercent = Math.Clamp(percent, 1, 100);
     }
 
-    public static Func<string, Task> DebugLog = null;
+    public static Func<string, Task>? DebugLog = null;
 
-    public static async Task<string> Process(string message, string username, string botUsername)
+    public static async Task<string?> Process(string message, string username, string botUsername)
     {
         if (string.IsNullOrWhiteSpace(message) || string.IsNullOrWhiteSpace(username))
             return null;
@@ -65,7 +65,7 @@ public static class ClapThatBotScript
         }
     }
 
-    private static (string, string, bool) FindAdjectiveNounPairLocal(string text)
+    private static (string?, string?, bool) FindAdjectiveNounPairLocal(string text)
     {
         string modelPath = ExtractModelToTempFile("EnglishPOS.nbin");
         DebugLog?.Invoke($"ClapThatBot: Loading POS model from: {modelPath}");
@@ -104,7 +104,7 @@ public static class ClapThatBotScript
         string tempPath = Path.GetTempFileName();
         using var input = assembly.GetManifestResourceStream(fullName);
         using var output = new FileStream(tempPath, FileMode.Create, FileAccess.Write);
-        input.CopyTo(output);
+        input!.CopyTo(output);
 
         return tempPath;
     }

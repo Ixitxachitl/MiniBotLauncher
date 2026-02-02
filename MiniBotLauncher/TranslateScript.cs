@@ -9,7 +9,7 @@ public static class TranslateScript
 {
     private static readonly HttpClient client = new HttpClient();
 
-    public static Func<string, Task> DebugLog = null;
+    public static Func<string, Task>? DebugLog = null;
 
     private static string targetLanguage = "en";
 
@@ -33,7 +33,7 @@ public static class TranslateScript
         targetLanguage = string.IsNullOrWhiteSpace(lang) ? "en" : lang;
     }
 
-    public static async Task<string> TryTranslate(string inputText, string username)
+    public static async Task<string?> TryTranslate(string inputText, string username)
     {
         if (string.IsNullOrWhiteSpace(inputText))
             return null;
@@ -50,7 +50,7 @@ public static class TranslateScript
         await TryLog($"TranslateScript: Evaluating message from {username}: \"{inputText}\"");
 
         string trimmedInput = inputText.Trim().ToLowerInvariant();
-        string forcedLang = null;
+        string? forcedLang = null;
 
         var knownWords = new Dictionary<string, string>
         {
@@ -91,13 +91,13 @@ public static class TranslateScript
 
         var trustedLatinLangs = new HashSet<string> { "en", "es", "it", "pt", "de", "fr", "nl", "ro", "pl", "sv", "no", "da" };
 
-        if (IsLatinAlphabet(inputText) && !trustedLatinLangs.Contains(sourceLang))
+        if (IsLatinAlphabet(inputText) && (sourceLang == null || !trustedLatinLangs.Contains(sourceLang)))
         {
             await TryLog($"TranslateScript: Untrusted Latin-based source language '{sourceLang}'. Skipping.");
             return null;
         }
 
-        string fullLanguageName = GetLanguageDisplayName(sourceLang);
+        string fullLanguageName = GetLanguageDisplayName(sourceLang ?? "unknown");
 
         string template = TranslatedFromTemplates.TryGetValue(targetLanguage, out var t)
             ? t : TranslatedFromTemplates["en"];
@@ -110,7 +110,7 @@ public static class TranslateScript
         return result;
     }
 
-    private static async Task<(string, string)> TranslateText(string text, string forcedSourceLang = null)
+    private static async Task<(string?, string?)> TranslateText(string text, string? forcedSourceLang = null)
     {
         if (string.IsNullOrWhiteSpace(text))
             return (null, null);
@@ -126,20 +126,20 @@ public static class TranslateScript
             JArray json = JArray.Parse(response);
             string translatedText = "";
 
-            if (json != null && json.Count > 0 && json[0] is JArray translationParts)
+            if (json.Count > 0 && json[0] is JArray translationParts)
             {
                 foreach (var part in translationParts)
                 {
                     if (part is JArray segment && segment.Count > 0 && segment[0] != null)
-                        translatedText += segment[0].ToString();
+                        translatedText += segment[0]?.ToString() ?? "";
                 }
             }
 
-            string sourceLang = json.Count > 2 && json[2] != null ? json[2].ToString() : "unknown";
+            string? sourceLang = json.Count > 2 && json[2] != null ? json[2]?.ToString() : "unknown";
 
             await TryLog($"TranslateScript: Translation API returned sourceLang='{sourceLang}', translatedText='{translatedText}'");
 
-            return (translatedText.Trim(), sourceLang);
+            return (translatedText.Trim(), sourceLang ?? "unknown");
         }
         catch (Exception ex)
         {
@@ -167,7 +167,7 @@ public static class TranslateScript
             { "fil", "Filipino" }
         };
 
-        if (manualMap.TryGetValue(isoCode, out string mapped))
+        if (manualMap.TryGetValue(isoCode, out string? mapped))
             return mapped;
 
         try

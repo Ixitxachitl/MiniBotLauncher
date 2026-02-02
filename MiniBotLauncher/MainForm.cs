@@ -14,25 +14,25 @@ using System.Reflection;
 
 public partial class MainForm : Form
 {
-    private TwitchClient client;
-    private TextBox txtClientID;
-    private ComboBox cboChannelName;
-    private Button btnAddChannel;
-    private Button btnRemoveChannel;
-    private CheckBox toggleAskAI;
-    private CheckBox toggleWeather;
-    private CheckBox toggleTranslate;
-    private CheckBox toggleButtsbot;
-    private CheckBox toggleClapThat;
-    private CheckBox toggleMarkovChain;
-    private CheckBox toggleSoundAlerts;
-    private CheckBox toggleWalkOn;
-    private Button btnLogin;
-    private Button btnLogout;
-    private Button btnConnect;
-    private Label lblLoggedInAs;
-    private TextBox txtStatusLog;
-    private Label lblConnectionStatus;
+    private TwitchClient client = null!;
+    private TextBox txtClientID = null!;
+    private ComboBox cboChannelName = null!;
+    private Button btnAddChannel = null!;
+    private Button btnRemoveChannel = null!;
+    private CheckBox toggleAskAI = null!;
+    private CheckBox toggleWeather = null!;
+    private CheckBox toggleTranslate = null!;
+    private CheckBox toggleButtsbot = null!;
+    private CheckBox toggleClapThat = null!;
+    private CheckBox toggleMarkovChain = null!;
+    private CheckBox toggleSoundAlerts = null!;
+    private CheckBox toggleWalkOn = null!;
+    private Button btnLogin = null!;
+    private Button btnLogout = null!;
+    private Button btnConnect = null!;
+    private Label lblLoggedInAs = null!;
+    private TextBox txtStatusLog = null!;
+    private Label lblConnectionStatus = null!;
     
     // Store credentials (not shown in UI)
     private string storedUsername = "";
@@ -44,24 +44,25 @@ public partial class MainForm : Form
     );
     private bool isDisconnecting = false;
 
-    private NotifyIcon trayIcon;
-    private ContextMenuStrip trayMenu;
+    private NotifyIcon trayIcon = null!;
+    private ContextMenuStrip trayMenu = null!;
     private List<string> ignoredUsernames = new List<string>();
-    private TrackBar trackVolume;
+    private TrackBar trackVolume = null!;
 
     // Stored event handlers for clean unsubscription
-    private EventHandler<OnConnectedArgs> onConnected;
-    private EventHandler<OnDisconnectedEventArgs> onDisconnected;
-    private EventHandler<OnConnectionErrorArgs> onConnectionError;
-    private EventHandler<OnErrorEventArgs> onError;
-    private EventHandler<OnLogArgs> onLog;
-    private EventHandler<OnMessageReceivedArgs> onMessageReceived;
+    private EventHandler<OnConnectedArgs>? onConnected;
+    private EventHandler<OnDisconnectedEventArgs>? onDisconnected;
+    private EventHandler<OnConnectionErrorArgs>? onConnectionError;
+    private EventHandler<OnErrorEventArgs>? onError;
+    private EventHandler<OnLogArgs>? onLog;
+    private EventHandler<OnMessageReceivedArgs>? onMessageReceived;
 
-    private Button btnPinTop;
-    private Button btnMinimizeTray;
-    private Button btnInfo;
+    private Button btnPinTop = null!;
+    private Button btnMinimizeTray = null!;
+    private Button btnInfo = null!;
 
     private SettingsData settings = new SettingsData();
+    private HttpListener? oauthListener;
     public MainForm()
     {
         InitializeComponent();
@@ -70,7 +71,8 @@ public partial class MainForm : Form
         using (var stream = Assembly.GetExecutingAssembly()
             .GetManifestResourceStream("MiniBotLauncher.MiniBotLauncher.ico"))
         {
-            this.Icon = new Icon(stream);
+            if (stream != null)
+                this.Icon = new Icon(stream);
         }
         LoadSettings();
 
@@ -90,7 +92,7 @@ public partial class MainForm : Form
 
         UpdateLoginUI();
         UpdateToggleStates();
-        this.FormClosing += MainForm_FormClosing;
+        this.FormClosing += MainForm_FormClosing!;
 
         ButtsBotScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
         ClapThatBotScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
@@ -194,7 +196,7 @@ public partial class MainForm : Form
 
             var label = new Label
             {
-                Text = $"v{Assembly.GetExecutingAssembly().GetName().Version.ToString(3)} ©2026 Ixitxachitl",
+                Text = $"v{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0"} ©2026 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20),
                 ForeColor = Color.White,
@@ -285,7 +287,7 @@ public partial class MainForm : Form
         Icon icon;
         using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("MiniBotLauncher.MiniBotLauncher.ico"))
         {
-            icon = new Icon(stream);
+            icon = stream != null ? new Icon(stream) : SystemIcons.Application;
         }
 
         trayIcon = new NotifyIcon()
@@ -404,7 +406,7 @@ public partial class MainForm : Form
         // Client ID field
         Label lblClientID = CreateLabel("Client ID");
         txtClientID = CreateTextBox(true);
-        txtClientID.TextChanged += TextFields_TextChanged;
+        txtClientID.TextChanged += TextFields_TextChanged!;
 
         // Channel to Join field
         Label lblChannel = CreateLabel("Channel to Join");
@@ -418,8 +420,8 @@ public partial class MainForm : Form
             FlatStyle = FlatStyle.Flat,
             DropDownStyle = ComboBoxStyle.DropDown
         };
-        cboChannelName.TextChanged += TextFields_TextChanged;
-        cboChannelName.SelectedIndexChanged += TextFields_TextChanged;
+        cboChannelName.TextChanged += TextFields_TextChanged!;
+        cboChannelName.SelectedIndexChanged += TextFields_TextChanged!;
 
         btnAddChannel = new Button
         {
@@ -463,7 +465,7 @@ public partial class MainForm : Form
         {
             if (cboChannelName.SelectedItem != null)
             {
-                string removed = cboChannelName.SelectedItem.ToString();
+                string? removed = cboChannelName.SelectedItem.ToString();
                 cboChannelName.Items.Remove(cboChannelName.SelectedItem);
                 if (cboChannelName.Items.Count > 0)
                     cboChannelName.SelectedIndex = 0;
@@ -497,7 +499,7 @@ public partial class MainForm : Form
         btnLogin.Left = marginLeft;
         btnLogin.Width = 100;
         btnLogin.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, btnLogin.Width, btnLogin.Height, 10, 10));
-        btnLogin.Click += btnLogin_Click;
+        btnLogin.Click += btnLogin_Click!;
 
         // Logout button
         btnLogout = CreateButton("Logout");
@@ -506,13 +508,13 @@ public partial class MainForm : Form
         btnLogout.Width = 100;
         btnLogout.Enabled = false;
         btnLogout.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, btnLogout.Width, btnLogout.Height, 10, 10));
-        btnLogout.Click += btnLogout_Click;
+        btnLogout.Click += btnLogout_Click!;
 
         // Connect button
         btnConnect = CreateButton("Connect");
         btnConnect.Top = currentTop;
         btnConnect.Left = 315;
-        btnConnect.Click += btnConnect_Click;
+        btnConnect.Click += btnConnect_Click!;
 
         lblConnectionStatus = new Label
         {
@@ -737,85 +739,10 @@ public partial class MainForm : Form
             this.TopMost = false;
             this.SendToBack();
 
-            var dialog = new Form()
+            var form = new MarkovChainSettingsForm(settings);
+            if (form.ShowDialog(this) == DialogResult.OK)
             {
-                Text = "Reset Markov Brain",
-                Size = new Size(360, 160),
-                StartPosition = FormStartPosition.CenterParent,
-                BackColor = Color.FromArgb(30, 30, 30),
-                ForeColor = Color.White,
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                MaximizeBox = false,
-                MinimizeBox = false
-            };
-
-            Label lbl = new Label()
-            {
-                Text = "Reset Markov brain file? This cannot be undone.",
-                AutoSize = true,
-                Location = new Point(20, 20),
-                ForeColor = Color.White
-            };
-
-            Button btnOK = new Button()
-            {
-                Text = "OK",
-                DialogResult = DialogResult.OK,
-                Location = new Point(60, 70),
-                Size = new Size(100, 35),
-                BackColor = Color.FromArgb(50, 50, 50),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            btnOK.FlatAppearance.BorderSize = 0;
-            btnOK.FlatAppearance.MouseOverBackColor = Color.FromArgb(70, 70, 70);
-            btnOK.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnOK.Width, btnOK.Height, 10, 10));
-
-            Button btnCancel = new Button()
-            {
-                Text = "Cancel",
-                DialogResult = DialogResult.Cancel,
-                Location = new Point(180, 70),
-                Size = new Size(100, 35),
-                BackColor = Color.FromArgb(50, 50, 50),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat
-            };
-            btnCancel.FlatAppearance.BorderSize = 0;
-            btnCancel.FlatAppearance.MouseOverBackColor = Color.FromArgb(70, 70, 70);
-            btnCancel.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnCancel.Width, btnCancel.Height, 10, 10));
-
-            dialog.Controls.AddRange(new Control[] { lbl, btnOK, btnCancel });
-
-            if (dialog.ShowDialog(this) == DialogResult.OK)
-            {
-                string channel = cboChannelName.Text.ToLowerInvariant();
-                MarkovChainScript.SetChannel(channel);
-
-                string brainFile = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "MiniBot",
-                    $"markov_brain_{channel}.json");
-
-                try
-                {
-                    if (File.Exists(brainFile))
-                    {
-                        File.Delete(brainFile);
-                        Log($"Markov brain for channel '{channel}' was deleted.");
-                    }
-                    else
-                    {
-                        Log($"No existing Markov brain file found for channel '{channel}'.");
-                    }
-
-                    MarkovChainScript.ResetCounter();
-                    Log("Markov brain reset successfully.");
-                }
-                catch (Exception ex)
-                {
-                    Log($"Failed to reset Markov brain: {ex.Message}");
-                }
+                SaveSettings();
             }
 
             this.TopMost = wasTopMost;
@@ -994,11 +921,11 @@ public partial class MainForm : Form
             Enabled = false
         };
         toggle.FlatAppearance.BorderSize = 1;
-        toggle.CheckedChanged += toggleScript_CheckedChanged;
+        toggle.CheckedChanged += toggleScript_CheckedChanged!;
         return toggle;
     }
 
-    private void btnConnect_Click(object sender, EventArgs e)
+    private void btnConnect_Click(object? sender, EventArgs e)
     {
         if (client != null && client.IsConnected)
         {
@@ -1006,7 +933,7 @@ public partial class MainForm : Form
             isDisconnecting = true;
             CleanupClient();
             // Trigger UI update after disconnect
-            Client_OnDisconnected(this, null); // optional fallback
+            Client_OnDisconnected(this, new OnDisconnectedEventArgs()); // optional fallback
         }
         else if (!isDisconnecting)
         {
@@ -1014,9 +941,9 @@ public partial class MainForm : Form
         }
     }
 
-    private void btnLogin_Click(object sender, EventArgs e) => StartOAuthFlow(txtClientID.Text);
+    private void btnLogin_Click(object? sender, EventArgs e) => StartOAuthFlow(txtClientID.Text);
     
-    private void btnLogout_Click(object sender, EventArgs e)
+    private void btnLogout_Click(object? sender, EventArgs e)
     {
         storedUsername = "";
         storedOAuthToken = "";
@@ -1047,7 +974,7 @@ public partial class MainForm : Form
         UpdateToggleStates();
     }
 
-    private async Task<string> ValidateTokenAndGetUsername(string token)
+    private async Task<string?> ValidateTokenAndGetUsername(string token)
     {
         try
         {
@@ -1113,8 +1040,6 @@ public partial class MainForm : Form
         }
     }
 
-    private HttpListener oauthListener;
-
     private void StartOAuthFlow(string clientId)
     {
         if (string.IsNullOrWhiteSpace(clientId))
@@ -1175,9 +1100,10 @@ public partial class MainForm : Form
     {
         try
         {
+            if (oauthListener == null) return;
             var context = oauthListener.EndGetContext(result);
 
-            if (context.Request.Url.AbsolutePath == "/callback/")
+            if (context.Request.Url?.AbsolutePath == "/callback/")
             {
                 Log("Serving OAuth HTML page...");
 
@@ -1193,7 +1119,8 @@ public partial class MainForm : Form
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                         body: 'access_token=' + encodeURIComponent(token)
                     }).then(() => {
-                        document.body.innerHTML = '<h1>Token received! You can close this window.</h1>';
+                        document.body.innerHTML = '<h1>Token received! Closing...</h1>';
+                        setTimeout(() => window.close(), 500);
                     });
                 } else {
                     document.body.innerHTML = '<h1>Error: No access token found.</h1>';
@@ -1208,9 +1135,9 @@ public partial class MainForm : Form
                 context.Response.OutputStream.Close();
 
                 // 🟰 Keep listening for the POST
-                oauthListener.BeginGetContext(OnOAuthCallback, null);
+                oauthListener?.BeginGetContext(OnOAuthCallback, null);
             }
-            else if (context.Request.Url.AbsolutePath == "/token/")
+            else if (context.Request.Url?.AbsolutePath == "/token/")
             {
                 Log("Receiving OAuth token POST...");
 
@@ -1218,7 +1145,7 @@ public partial class MainForm : Form
                 {
                     string body = reader.ReadToEnd();
                     var parsed = System.Web.HttpUtility.ParseQueryString(body);
-                    string token = parsed["access_token"];
+                    string? token = parsed["access_token"];
 
                     if (!string.IsNullOrWhiteSpace(token))
                     {
@@ -1227,7 +1154,7 @@ public partial class MainForm : Form
                         // Fetch username from Twitch API
                         _ = Task.Run(async () =>
                         {
-                            string username = await ValidateTokenAndGetUsername(token);
+                            string? username = await ValidateTokenAndGetUsername(token);
                             
                             Invoke(new Action(() =>
                             {
@@ -1338,12 +1265,12 @@ public partial class MainForm : Form
         }
         finally
         {
-            client = null;
+            client = null!;
         }
     }
 
 
-    private void Client_OnConnected(object sender, OnConnectedArgs e)
+    private void Client_OnConnected(object? sender, OnConnectedArgs e)
     {
         Invoke(new Action(() =>
         {
@@ -1364,7 +1291,7 @@ public partial class MainForm : Form
         }));
     }
 
-    private void Client_OnDisconnected(object sender, OnDisconnectedEventArgs e)
+    private void Client_OnDisconnected(object? sender, OnDisconnectedEventArgs e)
     {
         Invoke(new Action(() =>
         {
@@ -1383,15 +1310,15 @@ public partial class MainForm : Form
             // 🛑 Prevent reconnect: force cleanup and null out the client
             if (client != null)
             {
-                client.OnConnected -= Client_OnConnected;
-                client.OnDisconnected -= Client_OnDisconnected;
+                client.OnConnected -= Client_OnConnected!;
+                client.OnDisconnected -= Client_OnDisconnected!;
                 client.OnConnectionError -= onConnectionError;
                 client.OnError -= onError;
                 client.OnLog -= onLog;
                 client.OnMessageReceived -= onMessageReceived;
 
                 client.Disconnect(); // Just to be safe — fully close it
-                client = null;
+                client = null!;
             }
 
             isDisconnecting = false;
@@ -1405,7 +1332,7 @@ public partial class MainForm : Form
             try
             {
                 string json = File.ReadAllText(SettingsFile);
-                settings = JsonSerializer.Deserialize<SettingsData>(json);
+                settings = JsonSerializer.Deserialize<SettingsData>(json) ?? new SettingsData();
             }
             catch (Exception ex)
             {
@@ -1415,6 +1342,7 @@ public partial class MainForm : Form
         }
 
         // Ensure no nulls for collections
+        settings ??= new SettingsData();
         settings.IgnoredUsernames ??= new List<string>();
         settings.SoundAlertMappings ??= new Dictionary<string, string>();
         settings.WalkOnSoundMappings ??= new Dictionary<string, string>();
@@ -1467,6 +1395,8 @@ public partial class MainForm : Form
         SoundAlerts.SetSoundMappings(settings.SoundAlertMappings);
         WalkOnScript.SetSoundMappings(settings.WalkOnSoundMappings);
         WalkOnScript.SetLastKnownStreamStart(settings.WalkOnLastStreamStart);
+        MarkovChainScript.SetMessageInterval(settings.Markov_MessageInterval);
+        MarkovChainScript.SetBannedWords(settings.Markov_BannedWords);
 
         // Sync debug logging
         AskAIScript.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
@@ -1511,8 +1441,8 @@ public partial class MainForm : Form
 
         try
         {
-            string directory = Path.GetDirectoryName(SettingsFile);
-            if (!Directory.Exists(directory))
+            string? directory = Path.GetDirectoryName(SettingsFile);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
             }
@@ -1526,7 +1456,7 @@ public partial class MainForm : Form
         }
     }
 
-    private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+    private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
     {
         SaveSettings();
         CleanupClient();
@@ -1556,7 +1486,7 @@ public partial class MainForm : Form
         toggleWalkOn.Enabled = true;
     }
 
-    private void TextFields_TextChanged(object sender, EventArgs e) => UpdateToggleStates();
+    private void TextFields_TextChanged(object? sender, EventArgs e) => UpdateToggleStates();
 
     private void UpdateToggleStates()
     {
@@ -1613,7 +1543,7 @@ public partial class MainForm : Form
         }
     }
 
-    private void toggleScript_CheckedChanged(object sender, EventArgs e)
+    private void toggleScript_CheckedChanged(object? sender, EventArgs e)
     {
         var checkbox = sender as CheckBox;
         if (checkbox == null) return;
@@ -1621,7 +1551,7 @@ public partial class MainForm : Form
         checkbox.BackColor = checkbox.Checked ? Color.LightGreen : Color.LightGray;
     }
 
-    private async void Client_OnMessageReceived(object sender, OnMessageReceivedArgs e)
+    private async void Client_OnMessageReceived(object? sender, OnMessageReceivedArgs e)
     {
         string message = e.ChatMessage.Message;
         string username = e.ChatMessage.Username.ToLowerInvariant();
@@ -1658,7 +1588,7 @@ public partial class MainForm : Form
         if (toggleWalkOn.Checked)
         {
             WalkOnScript.Enabled = true;
-            string newStart = await WalkOnScript.TryPlayWalkOn(
+            string? newStart = await WalkOnScript.TryPlayWalkOn(
                 username,
                 settings.ChannelName.ToLowerInvariant(),
                 settings.ClientID,
@@ -1706,7 +1636,7 @@ public partial class MainForm : Form
 
         if (toggleButtsbot.Checked)
         {
-            string buttsMessage = await ButtsBotScript.Process(message, username);
+            string? buttsMessage = await ButtsBotScript.Process(message, username);
             if (!string.IsNullOrWhiteSpace(buttsMessage))
             {
                 client.SendMessage(channel, buttsMessage);
@@ -1715,7 +1645,7 @@ public partial class MainForm : Form
 
         if (toggleTranslate.Checked)
         {
-            string translated = await TranslateScript.TryTranslate(message, username);
+            string? translated = await TranslateScript.TryTranslate(message, username);
             if (!string.IsNullOrWhiteSpace(translated))
             {
                 client.SendMessage(channel, translated);
@@ -1725,7 +1655,7 @@ public partial class MainForm : Form
         
         if (toggleClapThat.Checked)
         {
-            string clapResponse = await ClapThatBotScript.Process(message, username, storedUsername);
+            string? clapResponse = await ClapThatBotScript.Process(message, username, storedUsername);
             if (!string.IsNullOrWhiteSpace(clapResponse))
             {
                 client.SendMessage(channel, clapResponse);
@@ -1735,7 +1665,7 @@ public partial class MainForm : Form
         if (toggleMarkovChain.Checked)
         {
             MarkovChainScript.SetChannel(channel);
-            string markov = MarkovChainScript.LearnAndMaybeRespond(message, username, storedUsername);
+            string? markov = MarkovChainScript.LearnAndMaybeRespond(message, username, storedUsername);
             if (!string.IsNullOrWhiteSpace(markov))
             {
                 client.SendMessage(channel, markov);

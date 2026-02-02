@@ -1,20 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 public class WalkOnSettingsForm : Form
 {
-    private ListBox listBox;
-    private TextBox txtUsernameInput;
-    private Button btnAdd, btnRemove, btnClose, btnCancel;
+    private ListBox listBox = null!;
+    private TextBox txtUsernameInput = null!;
+    private Button btnAdd = null!, btnRemove = null!, btnClose = null!, btnCancel = null!;
     private Dictionary<string, string> walkOnMappings;
     private SettingsData settings;
-
-    [DllImport("gdi32.dll", SetLastError = true)]
-    private static extern IntPtr CreateRoundRectRgn(int nLeftRect, int nTopRect, int nRightRect, int nBottomRect, int nWidthEllipse, int nHeightEllipse);
 
     public WalkOnSettingsForm(SettingsData settingsData)
     {
@@ -30,36 +25,13 @@ public class WalkOnSettingsForm : Form
     {
         this.Text = "Walk-On Sounds";
         this.Size = new Size(500, 380);
-        this.FormBorderStyle = FormBorderStyle.FixedDialog;
-        this.StartPosition = FormStartPosition.CenterParent;
-        this.MaximizeBox = false;
-        this.MinimizeBox = false;
-        this.BackColor = Color.FromArgb(30, 30, 30);
-        this.ForeColor = Color.White;
-        this.Font = new Font("Segoe UI", 10F);
+        Theme.ApplyToDialog(this);
 
-        listBox = new ListBox
-        {
-            Left = 20,
-            Top = 20,
-            Width = 440,
-            Height = 200,
-            BackColor = Color.FromArgb(40, 40, 40),
-            ForeColor = Color.White,
-            BorderStyle = BorderStyle.FixedSingle
-        };
+        listBox = Theme.CreateListBox(20, 20, 440, 200);
 
-        txtUsernameInput = new TextBox
-        {
-            Left = 20,
-            Top = listBox.Bottom + 15,
-            Width = 390,
-            BackColor = Color.FromArgb(50, 50, 50),
-            ForeColor = Color.White,
-            BorderStyle = BorderStyle.FixedSingle
-        };
+        txtUsernameInput = Theme.CreateTextBox(20, listBox.Bottom + 15, 390);
 
-        btnAdd = CreateStyledButton("+", txtUsernameInput.Right + 10, txtUsernameInput.Top - 5, 40);
+        btnAdd = Theme.CreateButton("+", txtUsernameInput.Right + 10, txtUsernameInput.Top - 5, 40, 40);
         btnAdd.Click += (s, e) =>
         {
             string username = txtUsernameInput.Text.Trim().ToLowerInvariant();
@@ -90,7 +62,7 @@ public class WalkOnSettingsForm : Form
             }
         };
 
-        btnRemove = CreateStyledButton("Remove Selected", 20, btnAdd.Bottom + 15, 150);
+        btnRemove = Theme.CreateButton("Remove Selected", 20, btnAdd.Bottom + 15, 150, 40);
         btnRemove.Click += (s, e) =>
         {
             if (listBox.SelectedItem is string selected)
@@ -105,11 +77,11 @@ public class WalkOnSettingsForm : Form
             }
         };
 
-        btnCancel = CreateStyledButton("Cancel", listBox.Right - 90, btnRemove.Top, 90);
+        btnCancel = Theme.CreateButton("Cancel", listBox.Right - 90, btnRemove.Top, 90, 40);
         btnCancel.DialogResult = DialogResult.Cancel;
         btnCancel.Click += (s, e) => Close();
 
-        btnClose = CreateStyledButton("OK", btnCancel.Left - 100, btnRemove.Top, 90);
+        btnClose = Theme.CreateButton("OK", btnCancel.Left - 100, btnRemove.Top, 90, 40);
         btnClose.DialogResult = DialogResult.OK;
         btnClose.Click += (s, e) =>
         {
@@ -119,24 +91,5 @@ public class WalkOnSettingsForm : Form
         };
 
         Controls.AddRange(new Control[] { listBox, txtUsernameInput, btnAdd, btnRemove, btnClose, btnCancel });
-    }
-
-    private Button CreateStyledButton(string text, int left, int top, int width)
-    {
-        var button = new Button
-        {
-            Text = text,
-            Left = left,
-            Top = top,
-            Width = width,
-            Height = 40,
-            BackColor = Color.FromArgb(50, 50, 50),
-            ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat
-        };
-        button.FlatAppearance.BorderSize = 0;
-        button.FlatAppearance.MouseOverBackColor = Color.FromArgb(70, 70, 70);
-        button.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, button.Width, button.Height, 10, 10));
-        return button;
     }
 }

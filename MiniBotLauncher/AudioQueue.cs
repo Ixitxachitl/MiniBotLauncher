@@ -8,13 +8,13 @@ using NAudio.Wave;
 public static class AudioQueue
 {
     private static readonly ConcurrentQueue<string> queue = new();
-    private static Task playbackTask;
+    private static Task? playbackTask;
     private static CancellationTokenSource cancelToken = new();
     private static float volume = 1.0f;
-    private static WaveOutEvent currentOutput;
+    private static WaveOutEvent? currentOutput;
 
-    public static Action<bool> OnPlaybackStateChanged;
-    public static Func<string, Task> DebugLog;
+    public static Action<bool>? OnPlaybackStateChanged;
+    public static Func<string, Task>? DebugLog;
 
     public static void SetVolume(float vol)
     {

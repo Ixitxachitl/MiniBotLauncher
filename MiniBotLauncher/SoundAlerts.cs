@@ -8,8 +8,8 @@ public static class SoundAlerts
     private static Dictionary<string, string> soundMappings = new();
 
     public static bool Enabled = false;
-    public static Func<string, Task> DebugLog = null;
-    public static Action<bool> OnPlaybackStateChanged = null;
+    public static Func<string, Task>? DebugLog = null;
+    public static Action<bool>? OnPlaybackStateChanged = null;
 
     public static void SetSoundMappings(Dictionary<string, string> mappings)
     {
@@ -24,7 +24,7 @@ public static class SoundAlerts
 
         string trimmed = message.Trim().ToLowerInvariant();
 
-        if (soundMappings.TryGetValue(trimmed, out string soundPath) && File.Exists(soundPath))
+        if (soundMappings.TryGetValue(trimmed, out string? soundPath) && File.Exists(soundPath))
         {
             AudioQueue.Enqueue(soundPath);
             await TryLog($"🔔 Triggered sound alert for '{message}': {soundPath}");

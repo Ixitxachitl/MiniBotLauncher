@@ -14,7 +14,7 @@ public static class AskAIScript
         gptServerUrl = $"{address}:{port}/v1/chat/completions";
     }
 
-    public static Func<string, Task> DebugLog = null;
+    public static Func<string, Task>? DebugLog = null;
 
     private static string modelName = "Llama 3 8B Instruct";
     private static int maxTokens = 50;
@@ -71,7 +71,7 @@ public static class AskAIScript
             await TryLog("AskAIScript: Received raw response from server.");
 
             JObject parsed = JObject.Parse(responseString);
-            string reply = parsed["choices"]?[0]?["message"]?["content"]?.ToString();
+            string? reply = parsed["choices"]?[0]?["message"]?["content"]?.ToString();
 
             if (string.IsNullOrWhiteSpace(reply))
             {

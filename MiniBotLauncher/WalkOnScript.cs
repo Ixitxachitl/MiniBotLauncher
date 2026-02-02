@@ -11,7 +11,7 @@ public static class WalkOnScript
     private static Dictionary<string, string> userSoundMappings = new();
 
     public static bool Enabled = false;
-    public static Func<string, Task> DebugLog = null;
+    public static Func<string, Task>? DebugLog = null;
 
     public static void SetSoundMappings(Dictionary<string, string> mappings)
     {
@@ -33,7 +33,7 @@ public static class WalkOnScript
         return lastStreamStart;
     }
 
-    public static async Task<string> TryPlayWalkOn(string username, string channel, string clientId, string oauthToken)
+    public static async Task<string?> TryPlayWalkOn(string username, string channel, string clientId, string oauthToken)
     {
         if (!Enabled)
         {
@@ -47,7 +47,7 @@ public static class WalkOnScript
             return null;
         }
 
-        string currentStart = await GetStreamStartTime(channel, clientId, oauthToken);
+        string? currentStart = await GetStreamStartTime(channel, clientId, oauthToken);
 
         if (string.IsNullOrEmpty(currentStart))
         {
@@ -98,7 +98,7 @@ public static class WalkOnScript
             if (data.GetArrayLength() == 0)
                 return ""; // not live
 
-            return data[0].GetProperty("started_at").GetString();
+            return data[0].GetProperty("started_at").GetString() ?? "";
         }
         catch (Exception ex)
         {
