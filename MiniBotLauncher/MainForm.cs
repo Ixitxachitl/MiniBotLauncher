@@ -1335,8 +1335,7 @@ public partial class MainForm : Form
             cboChannelName.Enabled = true;
             btnAddChannel.Enabled = true;
             btnRemoveChannel.Enabled = true;
-            btnLogin.Enabled = true;
-            btnLogout.Enabled = true;
+            UpdateLoginUI(); // Set login/logout buttons based on login state
 
             // Disable chat input
             txtChatInput.Enabled = false;
