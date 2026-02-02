@@ -1310,6 +1310,8 @@ public partial class MainForm : Form
             // Disable editing fields while connected
             txtClientID.Enabled = false;
             cboChannelName.Enabled = false;
+            btnAddChannel.Enabled = false;
+            btnRemoveChannel.Enabled = false;
             btnLogin.Enabled = false;
             btnLogout.Enabled = false;
 
@@ -1331,6 +1333,8 @@ public partial class MainForm : Form
             // Re-enable fields
             txtClientID.Enabled = true;
             cboChannelName.Enabled = true;
+            btnAddChannel.Enabled = true;
+            btnRemoveChannel.Enabled = true;
             btnLogin.Enabled = true;
             btnLogout.Enabled = true;
 
