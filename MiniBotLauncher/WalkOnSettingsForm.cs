@@ -7,7 +7,7 @@ public class WalkOnSettingsForm : Form
 {
     private ListBox listBox = null!;
     private TextBox txtUsernameInput = null!;
-    private Button btnAdd = null!, btnRemove = null!, btnClose = null!, btnCancel = null!;
+    private Button btnAdd = null!, btnRemove = null!, btnPreview = null!, btnClose = null!, btnCancel = null!;
     private Dictionary<string, string> walkOnMappings;
     private SettingsData settings;
 
@@ -24,7 +24,7 @@ public class WalkOnSettingsForm : Form
     private void InitializeComponent()
     {
         this.Text = "Walk-On Sounds";
-        this.Size = new Size(500, 380);
+        this.Size = new Size(500, 420);
         Theme.ApplyToDialog(this);
 
         listBox = Theme.CreateListBox(20, 20, 440, 200);
@@ -62,7 +62,7 @@ public class WalkOnSettingsForm : Form
             }
         };
 
-        btnRemove = Theme.CreateButton("Remove Selected", 20, btnAdd.Bottom + 15, 150, 40);
+        btnRemove = Theme.CreateButton("Remove", 20, btnAdd.Bottom + 15, 100, 40);
         btnRemove.Click += (s, e) =>
         {
             if (listBox.SelectedItem is string selected)
@@ -74,6 +74,31 @@ public class WalkOnSettingsForm : Form
                     walkOnMappings.Remove(key);
                     listBox.Items.Remove(selected);
                 }
+            }
+        };
+
+        btnPreview = Theme.CreateButton("▶ Preview", btnRemove.Right + 10, btnRemove.Top, 100, 40);
+        btnPreview.Click += (s, e) =>
+        {
+            if (listBox.SelectedItem is string selected)
+            {
+                int idx = selected.IndexOf(" → ");
+                if (idx != -1)
+                {
+                    string path = selected.Substring(idx + 3);
+                    if (System.IO.File.Exists(path))
+                    {
+                        AudioQueue.Enqueue(path);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Sound file not found.", "Error");
+                    }
+                }
+            }
+            else
+            {
+                MessageBox.Show("Please select a sound to preview.", "No Selection");
             }
         };
 
@@ -90,6 +115,6 @@ public class WalkOnSettingsForm : Form
             Close();
         };
 
-        Controls.AddRange(new Control[] { listBox, txtUsernameInput, btnAdd, btnRemove, btnClose, btnCancel });
+        Controls.AddRange(new Control[] { listBox, txtUsernameInput, btnAdd, btnRemove, btnPreview, btnClose, btnCancel });
     }
 }

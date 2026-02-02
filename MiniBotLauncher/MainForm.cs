@@ -28,7 +28,6 @@ public partial class MainForm : Form
     private CheckBox toggleSoundAlerts = null!;
     private CheckBox toggleWalkOn = null!;
     private Button btnLogin = null!;
-    private Button btnLogout = null!;
     private Button btnConnect = null!;
     private Label lblLoggedInAs = null!;
     private TextBox txtStatusLog = null!;
@@ -489,22 +488,13 @@ public partial class MainForm : Form
         };
         this.Controls.Add(lblLoggedInAs);
 
-        // Login button
+        // Login/Logout button (toggles based on state)
         btnLogin = CreateButton("Login");
         btnLogin.Top = currentTop;
         btnLogin.Left = marginLeft;
         btnLogin.Width = 100;
         btnLogin.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, btnLogin.Width, btnLogin.Height, 10, 10));
-        btnLogin.Click += btnLogin_Click!;
-
-        // Logout button
-        btnLogout = CreateButton("Logout");
-        btnLogout.Top = currentTop;
-        btnLogout.Left = btnLogin.Right + 10;
-        btnLogout.Width = 100;
-        btnLogout.Enabled = false;
-        btnLogout.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, btnLogout.Width, btnLogout.Height, 10, 10));
-        btnLogout.Click += btnLogout_Click!;
+        btnLogin.Click += btnLoginToggle_Click!;
 
         // Connect button
         btnConnect = CreateButton("Connect");
@@ -861,14 +851,14 @@ public partial class MainForm : Form
             btnStopAlerts.Invoke(() => btnStopAlerts.Enabled = isPlaying);
         };
 
-        currentTop = trackVolume.Bottom + 10;
+        currentTop = trackVolume.Bottom + 5;
 
         txtStatusLog = new TextBox
         {
             Left = marginLeft,
             Top = currentTop,
             Width = 440,
-            Height = 100,
+            Height = 115,
             Multiline = true,
             ReadOnly = true,
             ScrollBars = ScrollBars.Vertical,
@@ -915,7 +905,7 @@ public partial class MainForm : Form
             lblClientID, txtClientID,
             lblChannel, cboChannelName,
             lblLoginStatus, lblLoggedInAs,
-            btnLogin, btnLogout, btnConnect,
+            btnLogin, btnConnect,
             lblScripts,
             toggleAskAI, toggleWeather,
             toggleTranslate, toggleButtsbot,
@@ -966,15 +956,24 @@ public partial class MainForm : Form
         }
     }
 
-    private void btnLogin_Click(object? sender, EventArgs e) => StartOAuthFlow(txtClientID.Text);
-    
-    private void btnLogout_Click(object? sender, EventArgs e)
+    private void btnLoginToggle_Click(object? sender, EventArgs e)
     {
-        storedUsername = "";
-        storedOAuthToken = "";
-        UpdateLoginUI();
-        SaveSettings();
-        Log("Logged out from Twitch.");
+        bool isLoggedIn = !string.IsNullOrWhiteSpace(storedOAuthToken) && !string.IsNullOrWhiteSpace(storedUsername);
+        
+        if (isLoggedIn)
+        {
+            // Logout
+            storedUsername = "";
+            storedOAuthToken = "";
+            UpdateLoginUI();
+            SaveSettings();
+            Log("Logged out from Twitch.");
+        }
+        else
+        {
+            // Login
+            StartOAuthFlow(txtClientID.Text);
+        }
     }
 
     private void UpdateLoginUI()
@@ -985,15 +984,13 @@ public partial class MainForm : Form
         {
             lblLoggedInAs.Text = $"Logged in as: {storedUsername}";
             lblLoggedInAs.ForeColor = Color.LightGreen;
-            btnLogin.Enabled = false;
-            btnLogout.Enabled = true;
+            btnLogin.Text = "Logout";
         }
         else
         {
             lblLoggedInAs.Text = "Not logged in";
             lblLoggedInAs.ForeColor = Color.Gray;
-            btnLogin.Enabled = true;
-            btnLogout.Enabled = false;
+            btnLogin.Text = "Login";
         }
         
         UpdateToggleStates();
@@ -1313,7 +1310,6 @@ public partial class MainForm : Form
             btnAddChannel.Enabled = false;
             btnRemoveChannel.Enabled = false;
             btnLogin.Enabled = false;
-            btnLogout.Enabled = false;
 
             // Enable chat input
             txtChatInput.Enabled = true;
