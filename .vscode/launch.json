@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "MiniBotLauncher",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "Build (Release)",
+            "program": "${workspaceFolder}/MiniBotLauncher/bin/Release/net8.0-windows/win-x64/MiniBotLauncher.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/MiniBotLauncher",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "MiniBotLauncher (Debug)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "Build (Debug)",
+            "program": "${workspaceFolder}/MiniBotLauncher/bin/Debug/net8.0-windows/win-x64/MiniBotLauncher.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/MiniBotLauncher",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        }
+    ]
+}
