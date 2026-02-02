@@ -33,22 +33,22 @@ public static class ClapThatBotScript
         if (message.TrimStart().StartsWith("!", StringComparison.Ordinal))
             return null;
 
-        int roll = rng.Next(100);
-        if (roll >= replyChancePercent)
-        {
-            await TryLog($"ClapThatBot: Skipped message from {username} (roll {roll} ≥ {replyChancePercent}).");
-            return null;
-        }
-
-        await TryLog($"ClapThatBot: Triggered for message: \"{message}\"");
-
         try
         {
+            // First check if message has a valid adjective-noun pair
             var (adjective, noun, isPlural) = FindAdjectiveNounPairLocal(message);
 
             if (string.IsNullOrEmpty(adjective) || string.IsNullOrEmpty(noun))
             {
-                await TryLog("ClapThatBot: No valid adjective+noun pair found.");
+                // No valid pair - silently skip (don't log every message)
+                return null;
+            }
+
+            // Valid pair found - now roll for chance
+            int roll = rng.Next(100);
+            if (roll >= replyChancePercent)
+            {
+                await TryLog($"ClapThatBot: Found \"{adjective} {noun}\" but skipped (roll {roll} ≥ {replyChancePercent}%).");
                 return null;
             }
 

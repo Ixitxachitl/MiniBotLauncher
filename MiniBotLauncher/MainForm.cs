@@ -66,6 +66,9 @@ public partial class MainForm : Form
     private HttpListener? oauthListener;
     public MainForm()
     {
+        // Load theme before building UI
+        LoadThemeFromSettings();
+        
         InitializeComponent();
         AddTopRightButtons();
         SetupTrayIcon();
@@ -113,7 +116,7 @@ public partial class MainForm : Form
             Location = new Point(this.ClientSize.Width - 160, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White,
+            ForeColor = Theme.ForegroundColor,
             Font = new Font("Segoe UI Emoji", 11, FontStyle.Regular)
         };
         btnIgnoreList.FlatAppearance.BorderSize = 0;
@@ -141,7 +144,7 @@ public partial class MainForm : Form
             Location = new Point(this.ClientSize.Width - 125, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White,
+            ForeColor = Theme.ForegroundColor,
             Font = new Font("Segoe UI Emoji", 11, FontStyle.Regular)
         };
         btnPinTop.FlatAppearance.BorderSize = 0;
@@ -158,7 +161,7 @@ public partial class MainForm : Form
             Location = new Point(this.ClientSize.Width - 90, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White,
+            ForeColor = Theme.ForegroundColor,
             Font = new Font("Segoe UI Emoji", 11, FontStyle.Regular)
         };
         btnMinimizeTray.FlatAppearance.BorderSize = 0;
@@ -171,7 +174,7 @@ public partial class MainForm : Form
             Location = new Point(this.ClientSize.Width - 55, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White,
+            ForeColor = Theme.ForegroundColor,
             Font = new Font("Segoe UI Emoji", 11, FontStyle.Regular)
         };
         btnInfo.FlatAppearance.BorderSize = 0;
@@ -184,14 +187,14 @@ public partial class MainForm : Form
             Form infoForm = new Form
             {
                 Text = "About MiniBotLauncher",
-                Size = new Size(440, 200),
+                Size = new Size(440, 260),
                 StartPosition = FormStartPosition.CenterParent,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
                 MinimizeBox = false,
                 TopMost = true,
-                BackColor = Color.FromArgb(30, 30, 30),
-                ForeColor = Color.White,
+                BackColor = Theme.BackgroundDark,
+                ForeColor = Theme.ForegroundColor,
                 Font = new Font("Segoe UI", 10F)
             };
 
@@ -200,7 +203,7 @@ public partial class MainForm : Form
                 Text = $"v{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0"} ©2026 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20),
-                ForeColor = Color.White,
+                ForeColor = Theme.ForegroundColor,
                 BackColor = Color.Transparent
             };
 
@@ -209,7 +212,7 @@ public partial class MainForm : Form
                 Text = "Includes Apache OpenNLP (Apache License 2.0)",
                 AutoSize = true,
                 Location = new Point(20, 40),
-                ForeColor = Color.White,
+                ForeColor = Theme.ForegroundColor,
                 BackColor = Color.Transparent
             };
 
@@ -218,7 +221,7 @@ public partial class MainForm : Form
                 Text = "Includes CMUdict (BSD-licensed) for offline syllable detection",
                 AutoSize = true,
                 Location = new Point(20, 60),
-                ForeColor = Color.White,
+                ForeColor = Theme.ForegroundColor,
                 BackColor = Color.Transparent
             };
 
@@ -227,7 +230,7 @@ public partial class MainForm : Form
                 Text = "https://github.com/Ixitxachitl/MiniBotLauncher",
                 AutoSize = true,
                 Location = new Point(20, 80),
-                LinkColor = Color.SteelBlue
+                LinkColor = Theme.LinkColor
             };
             link.LinkClicked += (ls, le) =>
             {
@@ -238,26 +241,62 @@ public partial class MainForm : Form
                 });
             };
 
+            var themeLabel = new Label
+            {
+                Text = "Theme:",
+                AutoSize = true,
+                Location = new Point(20, 115),
+                ForeColor = Theme.ForegroundColor,
+                BackColor = Color.Transparent
+            };
+
+            var themeCombo = new ComboBox
+            {
+                Location = new Point(80, 112),
+                Width = 120,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                BackColor = Theme.BackgroundLight,
+                ForeColor = Theme.ForegroundColor
+            };
+            themeCombo.Items.AddRange(new object[] { "Dark", "Light", "Classic" });
+            themeCombo.SelectedItem = Theme.CurrentTheme.ToString();
+
             var okButton = new Button
             {
                 Text = "OK",
                 DialogResult = DialogResult.OK,
-                Location = new Point((infoForm.ClientSize.Width - 80) / 2, 110),
+                Location = new Point((infoForm.ClientSize.Width - 80) / 2, 165),
                 Width = 80,
                 Height = 40,
-                BackColor = Color.FromArgb(50, 50, 50),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
+                BackColor = Theme.BackgroundLight,
+                ForeColor = Theme.ForegroundColor,
+                FlatStyle = Theme.ButtonStyle,
                 Font = new Font("Segoe UI", 10F)
             };
-            okButton.FlatAppearance.BorderSize = 0;
-            okButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(70, 70, 70);
-            okButton.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, okButton.Width, okButton.Height, 10, 10));
+            if (Theme.ButtonStyle == FlatStyle.Flat)
+            {
+                okButton.FlatAppearance.BorderSize = 0;
+                okButton.FlatAppearance.MouseOverBackColor = Theme.HoverColor;
+                okButton.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, okButton.Width, okButton.Height, 10, 10));
+            }
+            okButton.Click += (ob, oe) =>
+            {
+                string selectedTheme = themeCombo.SelectedItem?.ToString() ?? "Dark";
+                if (selectedTheme != settings.Theme)
+                {
+                    Theme.SetTheme(selectedTheme);
+                    settings.Theme = selectedTheme;
+                    SaveSettings();
+                    Theme.ApplyThemeToControl(this);
+                }
+            };
 
             infoForm.Controls.Add(label);
             infoForm.Controls.Add(attribution);
             infoForm.Controls.Add(attribution2);
             infoForm.Controls.Add(link);
+            infoForm.Controls.Add(themeLabel);
+            infoForm.Controls.Add(themeCombo);
             infoForm.Controls.Add(okButton);
             infoForm.AcceptButton = okButton;
 
@@ -307,13 +346,14 @@ public partial class MainForm : Form
         this.Size = new Size(515, 720);
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MaximizeBox = false;
-        this.BackColor = Color.FromArgb(30, 30, 30);
+        this.BackColor = Theme.BackgroundDark;
+        this.ForeColor = Theme.ForegroundColor;
         this.Font = new Font("Segoe UI", 10F);
 
-        Color foreColor = Color.White;
-        Color buttonColor = Color.FromArgb(50, 50, 50);
-        Color activeButtonColor = Color.FromArgb(70, 70, 70);
-        Color toggleActiveColor = Color.FromArgb(0, 122, 204);
+        Color foreColor = Theme.ForegroundColor;
+        Color buttonColor = Theme.BackgroundLight;
+        Color activeButtonColor = Theme.HoverColor;
+        Color toggleActiveColor = Theme.AccentColor;
 
         int marginLeft = 30;
         int toggleGap = 10;
@@ -344,9 +384,9 @@ public partial class MainForm : Form
                 Left = inputLeft,
                 Top = currentTop - spacing,
                 Width = 320,
-                BackColor = Color.FromArgb(50, 50, 50),
+                BackColor = Theme.CurrentTheme == ThemeType.Classic ? SystemColors.Window : Theme.BackgroundLight,
                 ForeColor = foreColor,
-                BorderStyle = BorderStyle.FixedSingle,
+                BorderStyle = Theme.TextBoxBorder,
                 UseSystemPasswordChar = passwordChar
             };
             return textbox;
@@ -363,12 +403,15 @@ public partial class MainForm : Form
                 Height = 40,
                 BackColor = buttonColor,
                 ForeColor = foreColor,
-                FlatStyle = FlatStyle.Flat,
+                FlatStyle = Theme.ButtonStyle,
                 TabStop = false
             };
-            button.FlatAppearance.BorderSize = 0;
-            button.FlatAppearance.MouseOverBackColor = activeButtonColor;
-            button.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, button.Width, button.Height, 10, 10));
+            if (Theme.ButtonStyle == FlatStyle.Flat)
+            {
+                button.FlatAppearance.BorderSize = 0;
+                button.FlatAppearance.MouseOverBackColor = activeButtonColor;
+                button.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, button.Width, button.Height, 10, 10));
+            }
             return button;
         }
 
@@ -385,16 +428,19 @@ public partial class MainForm : Form
                 TextAlign = ContentAlignment.MiddleCenter,
                 BackColor = buttonColor,
                 ForeColor = foreColor,
-                FlatStyle = FlatStyle.Flat
+                FlatStyle = Theme.ButtonStyle
             };
-            toggle.FlatAppearance.BorderSize = 0;
+            if (Theme.ButtonStyle == FlatStyle.Flat)
+                toggle.FlatAppearance.BorderSize = 0;
 
             toggle.CheckedChanged += (s, e) =>
             {
-                toggle.BackColor = toggle.Checked ? toggleActiveColor : buttonColor;
+                // Use current theme colors, not captured variables
+                toggle.BackColor = toggle.Checked ? Theme.AccentColor : Theme.BackgroundLight;
             };
 
-            toggle.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, toggle.Width, toggle.Height, 10, 10));
+            if (Theme.ButtonStyle == FlatStyle.Flat)
+                toggle.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, toggle.Width, toggle.Height, 10, 10));
             return toggle;
         }
 
@@ -410,9 +456,9 @@ public partial class MainForm : Form
             Left = inputLeft,
             Top = currentTop - spacing,
             Width = 250,
-            BackColor = Color.FromArgb(50, 50, 50),
+            BackColor = Theme.CurrentTheme == ThemeType.Classic ? SystemColors.Window : Theme.BackgroundLight,
             ForeColor = foreColor,
-            FlatStyle = FlatStyle.Flat,
+            FlatStyle = Theme.CurrentTheme == ThemeType.Classic ? FlatStyle.Standard : FlatStyle.Flat,
             DropDownStyle = ComboBoxStyle.DropDown
         };
         cboChannelName.TextChanged += TextFields_TextChanged!;
@@ -427,10 +473,13 @@ public partial class MainForm : Form
             Height = 26,
             BackColor = buttonColor,
             ForeColor = foreColor,
-            FlatStyle = FlatStyle.Flat
+            FlatStyle = Theme.ButtonStyle
         };
-        btnAddChannel.FlatAppearance.BorderSize = 0;
-        btnAddChannel.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnAddChannel.Width, btnAddChannel.Height, 8, 8));
+        if (Theme.ButtonStyle == FlatStyle.Flat)
+        {
+            btnAddChannel.FlatAppearance.BorderSize = 0;
+            btnAddChannel.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnAddChannel.Width, btnAddChannel.Height, 8, 8));
+        }
         btnAddChannel.Click += (s, e) =>
         {
             string channel = cboChannelName.Text.Trim().ToLowerInvariant();
@@ -452,10 +501,13 @@ public partial class MainForm : Form
             Height = 26,
             BackColor = buttonColor,
             ForeColor = foreColor,
-            FlatStyle = FlatStyle.Flat
+            FlatStyle = Theme.ButtonStyle
         };
-        btnRemoveChannel.FlatAppearance.BorderSize = 0;
-        btnRemoveChannel.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnRemoveChannel.Width, btnRemoveChannel.Height, 8, 8));
+        if (Theme.ButtonStyle == FlatStyle.Flat)
+        {
+            btnRemoveChannel.FlatAppearance.BorderSize = 0;
+            btnRemoveChannel.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnRemoveChannel.Width, btnRemoveChannel.Height, 8, 8));
+        }
         btnRemoveChannel.Click += (s, e) =>
         {
             if (cboChannelName.SelectedItem != null)
@@ -491,7 +543,8 @@ public partial class MainForm : Form
             AutoSize = true,
             ForeColor = Color.Gray,
             BackColor = Color.Transparent,
-            TextAlign = ContentAlignment.MiddleLeft
+            TextAlign = ContentAlignment.MiddleLeft,
+            Tag = "KeepColor"  // Preserve dynamic color during theme changes
         };
         this.Controls.Add(lblLoggedInAs);
 
@@ -503,7 +556,8 @@ public partial class MainForm : Form
             Left = 285,
             AutoSize = true,
             ForeColor = Color.Red,
-            BackColor = Color.Transparent
+            BackColor = Color.Transparent,
+            Tag = "KeepColor"  // Preserve dynamic color during theme changes
         };
         this.Controls.Add(lblConnectionStatus);
 
@@ -530,7 +584,7 @@ public partial class MainForm : Form
             Location = new Point(toggleAskAI.Right + 5, toggleAskAI.Top + 3),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White
+            ForeColor = Theme.ForegroundColor
         };
         btnSettings.FlatAppearance.BorderSize = 0;
         btnSettings.Click += (s, e) =>
@@ -572,7 +626,7 @@ public partial class MainForm : Form
             Location = new Point(toggleWeather.Right + 5, toggleWeather.Top + 3),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White
+            ForeColor = Theme.ForegroundColor
         };
         btnWeatherSettings.FlatAppearance.BorderSize = 0;
         btnWeatherSettings.Click += (s, e) =>
@@ -609,7 +663,7 @@ public partial class MainForm : Form
             Location = new Point(toggleTranslate.Right + 5, toggleTranslate.Top + 3),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White
+            ForeColor = Theme.ForegroundColor
         };
         btnTranslateSettings.FlatAppearance.BorderSize = 0;
         btnTranslateSettings.Click += (s, e) =>
@@ -644,7 +698,7 @@ public partial class MainForm : Form
             Location = new Point(toggleButtsbot.Right + 5, toggleButtsbot.Top + 3),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White
+            ForeColor = Theme.ForegroundColor
         };
         btnButtsbotSettings.FlatAppearance.BorderSize = 0;
         btnButtsbotSettings.Click += (s, e) =>
@@ -680,7 +734,7 @@ public partial class MainForm : Form
             Location = new Point(toggleClapThat.Right + 5, toggleClapThat.Top + 3),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White
+            ForeColor = Theme.ForegroundColor
         };
         btnClapthatSettings.FlatAppearance.BorderSize = 0;
         btnClapthatSettings.Click += (s, e) =>
@@ -714,7 +768,7 @@ public partial class MainForm : Form
             Location = new Point(toggleMarkovChain.Right + 5, toggleMarkovChain.Top + 3),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White
+            ForeColor = Theme.ForegroundColor
         };
         btnMarkovSettings.FlatAppearance.BorderSize = 0;
 
@@ -751,7 +805,7 @@ public partial class MainForm : Form
             Location = new Point(toggleSoundAlerts.Right + 5, toggleSoundAlerts.Top + 3),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White
+            ForeColor = Theme.ForegroundColor
         };
         btnSoundAlertsSettings.FlatAppearance.BorderSize = 0;
         btnSoundAlertsSettings.Click += (s, e) =>
@@ -784,7 +838,7 @@ public partial class MainForm : Form
             Location = new Point(toggleWalkOn.Right + 5, toggleWalkOn.Top + 3),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White
+            ForeColor = Theme.ForegroundColor
         };
         btnWalkOnSettings.FlatAppearance.BorderSize = 0;
         btnWalkOnSettings.Click += (s, e) =>
@@ -812,10 +866,10 @@ public partial class MainForm : Form
             Value = 100,
             TickStyle = TickStyle.None,
             Width = 350,
-            Height = 30,
+            Height = 25,
             Left = marginLeft,
             Top = currentTop + 40,
-            BackColor = Color.FromArgb(30, 30, 30),
+            BackColor = Theme.BackgroundDark,
             AutoSize = false
         };
         
@@ -845,7 +899,7 @@ public partial class MainForm : Form
             Location = new Point(trackVolume.Right + 50, trackVolume.Top - 5),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
-            ForeColor = Color.White,
+            ForeColor = Theme.ForegroundColor,
             Enabled = false
         };
         AudioQueue.OnPlaybackStateChanged += (isPlaying) =>
@@ -876,9 +930,9 @@ public partial class MainForm : Form
             Top = chatTop,
             Width = 355,
             Height = 25,
-            BackColor = Color.FromArgb(50, 50, 50),
+            BackColor = Theme.CurrentTheme == ThemeType.Classic ? SystemColors.Window : Theme.BackgroundLight,
             ForeColor = foreColor,
-            BorderStyle = BorderStyle.FixedSingle,
+            BorderStyle = Theme.TextBoxBorder,
             PlaceholderText = "Type a message...",
             Enabled = false
         };
@@ -891,12 +945,13 @@ public partial class MainForm : Form
             Top = chatTop,
             Width = 80,
             Height = 25,
-            BackColor = Color.FromArgb(60, 60, 60),
+            BackColor = buttonColor,
             ForeColor = foreColor,
-            FlatStyle = FlatStyle.Flat,
+            FlatStyle = Theme.ButtonStyle,
             Enabled = false
         };
-        btnSendChat.FlatAppearance.BorderSize = 0;
+        if (Theme.ButtonStyle == FlatStyle.Flat)
+            btnSendChat.FlatAppearance.BorderSize = 0;
         btnSendChat.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnSendChat.Width, btnSendChat.Height, 8, 8));
         btnSendChat.Click += BtnSendChat_Click;
 
@@ -910,9 +965,9 @@ public partial class MainForm : Form
             Multiline = true,
             ReadOnly = true,
             ScrollBars = ScrollBars.Vertical,
-            BackColor = Color.FromArgb(40, 40, 40),
+            BackColor = Theme.CurrentTheme == ThemeType.Classic ? SystemColors.Window : Theme.BackgroundMedium,
             ForeColor = foreColor,
-            BorderStyle = BorderStyle.FixedSingle
+            BorderStyle = Theme.TextBoxBorder
         };
 
         Controls.AddRange(new Control[]
@@ -997,7 +1052,7 @@ public partial class MainForm : Form
         if (isLoggedIn)
         {
             lblLoggedInAs.Text = $"Logged in as: {storedUsername}";
-            lblLoggedInAs.ForeColor = Color.LightGreen;
+            lblLoggedInAs.ForeColor = Color.Green;
             btnLogin.Text = "Logout";
         }
         else
@@ -1367,6 +1422,24 @@ public partial class MainForm : Form
 
             isDisconnecting = false;
         }));
+    }
+
+    private void LoadThemeFromSettings()
+    {
+        // Early load just for theme - before UI is built
+        if (File.Exists(SettingsFile))
+        {
+            try
+            {
+                string json = File.ReadAllText(SettingsFile);
+                var tempSettings = JsonSerializer.Deserialize<SettingsData>(json);
+                if (tempSettings != null && !string.IsNullOrEmpty(tempSettings.Theme))
+                {
+                    Theme.SetTheme(tempSettings.Theme);
+                }
+            }
+            catch { /* ignore - will use default theme */ }
+        }
     }
 
     private void LoadSettings()

@@ -52,4 +52,7 @@ public class SettingsData
     // Markov Chain-specific settings
     public int Markov_MessageInterval { get; set; } = 35;
     public List<string> Markov_BannedWords { get; set; } = new();
+
+    // UI Theme setting
+    public string Theme { get; set; } = "Dark";
 }
