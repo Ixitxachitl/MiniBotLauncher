@@ -25,6 +25,7 @@ public class SettingsData
     public string AskAI_ModelName { get; set; } = "Llama 3 8B Instruct";
     public int AskAI_MaxTokens { get; set; } = 50;
     public string AskAI_SystemMessage { get; set; } = "";
+    public string AskAI_CommandTrigger { get; set; } = "!askai";
 
     // Weather-specific settings
     public string Weather_FormatString { get; set; } = "2";

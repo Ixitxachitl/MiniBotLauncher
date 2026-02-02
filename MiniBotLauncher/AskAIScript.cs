@@ -19,6 +19,14 @@ public static class AskAIScript
     private static string modelName = "Llama 3 8B Instruct";
     private static int maxTokens = 50;
     private static string systemMessage = "";
+    private static string commandTrigger = "!askai";
+
+    public static void SetCommandTrigger(string trigger)
+    {
+        commandTrigger = string.IsNullOrWhiteSpace(trigger) ? "!askai" : trigger.Trim();
+    }
+
+    public static string GetCommandTrigger() => commandTrigger;
 
     public static void SetConfig(string model, int tokens, string systemMsg, string serverAddress, int port)
     {
@@ -33,7 +41,7 @@ public static class AskAIScript
         if (string.IsNullOrWhiteSpace(prompt))
         {
             await TryLog("AskAIScript: Empty prompt received.");
-            return "You need to provide a prompt after !askai!";
+            return $"You need to provide a prompt after {commandTrigger}!";
         }
 
         await TryLog($"AskAIScript: Sending prompt to GPT server: \"{prompt}\"");

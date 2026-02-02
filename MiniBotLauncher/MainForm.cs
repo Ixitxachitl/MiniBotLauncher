@@ -33,6 +33,8 @@ public partial class MainForm : Form
     private Label lblLoggedInAs = null!;
     private TextBox txtStatusLog = null!;
     private Label lblConnectionStatus = null!;
+    private TextBox txtChatInput = null!;
+    private Button btnSendChat = null!;
     
     // Store credentials (not shown in UI)
     private string storedUsername = "";
@@ -303,7 +305,7 @@ public partial class MainForm : Form
     private void InitializeComponent()
     {
         this.Text = "MiniBotLauncher";
-        this.Size = new Size(515, 720);
+        this.Size = new Size(515, 660);
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MaximizeBox = false;
         this.BackColor = Color.FromArgb(30, 30, 30);
@@ -383,16 +385,10 @@ public partial class MainForm : Form
                 Appearance = Appearance.Button,
                 TextAlign = ContentAlignment.MiddleCenter,
                 BackColor = buttonColor,
-                ForeColor = Color.Gray,
-                FlatStyle = FlatStyle.Flat,
-                Enabled = false
+                ForeColor = foreColor,
+                FlatStyle = FlatStyle.Flat
             };
             toggle.FlatAppearance.BorderSize = 0;
-
-            toggle.EnabledChanged += (s, e) =>
-            {
-                toggle.ForeColor = toggle.Enabled ? foreColor : Color.Gray;
-            };
 
             toggle.CheckedChanged += (s, e) =>
             {
@@ -872,7 +868,7 @@ public partial class MainForm : Form
             Left = marginLeft,
             Top = currentTop,
             Width = 440,
-            Height = 128,
+            Height = 100,
             Multiline = true,
             ReadOnly = true,
             ScrollBars = ScrollBars.Vertical,
@@ -881,7 +877,38 @@ public partial class MainForm : Form
             BorderStyle = BorderStyle.FixedSingle
         };
 
-        currentTop += 110;
+        currentTop = txtStatusLog.Bottom + 5;
+
+        // Chat input field
+        txtChatInput = new TextBox
+        {
+            Left = marginLeft,
+            Top = currentTop,
+            Width = 355,
+            Height = 25,
+            BackColor = Color.FromArgb(50, 50, 50),
+            ForeColor = foreColor,
+            BorderStyle = BorderStyle.FixedSingle,
+            PlaceholderText = "Type a message...",
+            Enabled = false
+        };
+        txtChatInput.KeyDown += TxtChatInput_KeyDown;
+
+        btnSendChat = new Button
+        {
+            Text = "Send",
+            Left = txtChatInput.Right + 5,
+            Top = currentTop,
+            Width = 80,
+            Height = 25,
+            BackColor = Color.FromArgb(60, 60, 60),
+            ForeColor = foreColor,
+            FlatStyle = FlatStyle.Flat,
+            Enabled = false
+        };
+        btnSendChat.FlatAppearance.BorderSize = 0;
+        btnSendChat.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnSendChat.Width, btnSendChat.Height, 8, 8));
+        btnSendChat.Click += BtnSendChat_Click;
 
         Controls.AddRange(new Control[]
         {
@@ -896,10 +923,9 @@ public partial class MainForm : Form
             toggleSoundAlerts, btnSoundAlertsSettings,
             toggleWalkOn, btnWalkOnSettings,
             trackVolume, btnStopAlerts,
-            txtStatusLog, lblConnectionStatus
+            txtStatusLog, lblConnectionStatus,
+            txtChatInput, btnSendChat
         });
-
-        DisableAllToggles();
     }
 
     [System.Runtime.InteropServices.DllImport("gdi32.dll", SetLastError = true)]
@@ -917,8 +943,7 @@ public partial class MainForm : Form
             Appearance = Appearance.Button,
             TextAlign = ContentAlignment.MiddleCenter,
             BackColor = Color.LightGray,
-            FlatStyle = FlatStyle.Flat,
-            Enabled = false
+            FlatStyle = FlatStyle.Flat
         };
         toggle.FlatAppearance.BorderSize = 1;
         toggle.CheckedChanged += toggleScript_CheckedChanged!;
@@ -1278,7 +1303,6 @@ public partial class MainForm : Form
             lblConnectionStatus.Text = "🔌";
             lblConnectionStatus.ForeColor = Color.Green;
             btnConnect.Text = "Disconnect";
-            EnableAllToggles();
 
             MarkovChainScript.SetChannel(cboChannelName.Text);
             SaveSettings();
@@ -1288,6 +1312,10 @@ public partial class MainForm : Form
             cboChannelName.Enabled = false;
             btnLogin.Enabled = false;
             btnLogout.Enabled = false;
+
+            // Enable chat input
+            txtChatInput.Enabled = true;
+            btnSendChat.Enabled = true;
         }));
     }
 
@@ -1299,13 +1327,16 @@ public partial class MainForm : Form
             lblConnectionStatus.Text = "🔌";
             lblConnectionStatus.ForeColor = Color.Red;
             btnConnect.Text = "Connect";
-            DisableAllToggles();
 
             // Re-enable fields
             txtClientID.Enabled = true;
             cboChannelName.Enabled = true;
             btnLogin.Enabled = true;
             btnLogout.Enabled = true;
+
+            // Disable chat input
+            txtChatInput.Enabled = false;
+            btnSendChat.Enabled = false;
 
             // 🛑 Prevent reconnect: force cleanup and null out the client
             if (client != null)
@@ -1385,6 +1416,7 @@ public partial class MainForm : Form
             settings.AskAI_ServerAddress,
             settings.AskAI_ServerPort
         );
+        AskAIScript.SetCommandTrigger(settings.AskAI_CommandTrigger);
 
         WeatherScript.SetFormat(settings.Weather_FormatString);
         TranslateScript.SetTargetLanguage(settings.Translate_TargetLanguage);
@@ -1462,30 +1494,6 @@ public partial class MainForm : Form
         CleanupClient();
     }
 
-    private void DisableAllToggles()
-    {
-        toggleAskAI.Enabled = false;
-        toggleWeather.Enabled = false;
-        toggleTranslate.Enabled = false;
-        toggleButtsbot.Enabled = false;
-        toggleClapThat.Enabled = false;
-        toggleMarkovChain.Enabled = false;
-        toggleSoundAlerts.Enabled = false;
-        toggleWalkOn.Enabled = false;
-    }
-
-    private void EnableAllToggles()
-    {
-        toggleAskAI.Enabled = true;
-        toggleWeather.Enabled = true;
-        toggleTranslate.Enabled = true;
-        toggleMarkovChain.Enabled = true;
-        toggleButtsbot.Enabled = true;
-        toggleClapThat.Enabled = true;
-        toggleSoundAlerts.Enabled = true;
-        toggleWalkOn.Enabled = true;
-    }
-
     private void TextFields_TextChanged(object? sender, EventArgs e) => UpdateToggleStates();
 
     private void UpdateToggleStates()
@@ -1497,20 +1505,41 @@ public partial class MainForm : Form
         btnConnect.Enabled = basicReady;
         btnLogin.Enabled = loginReady;
 
-        if (lblConnectionStatus.ForeColor == Color.Green) // Connected
+        // Toggles are always enabled so users can configure before connecting
+    }
+
+    private void BtnSendChat_Click(object? sender, EventArgs e) => SendChatMessage();
+
+    private void TxtChatInput_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyCode == Keys.Enter)
         {
-            toggleAskAI.Enabled = basicReady;
-            toggleWeather.Enabled = basicReady;
-            toggleTranslate.Enabled = basicReady;
-            toggleMarkovChain.Enabled = basicReady;
-            toggleButtsbot.Enabled = basicReady;
-            toggleClapThat.Enabled = basicReady;
-            toggleSoundAlerts.Enabled = basicReady;
-            toggleWalkOn.Enabled = basicReady;
+            e.SuppressKeyPress = true; // Prevent the "ding" sound
+            SendChatMessage();
         }
-        else
+    }
+
+    private void SendChatMessage()
+    {
+        if (client == null || !client.IsConnected)
         {
-            DisableAllToggles();
+            Log("Cannot send message: Not connected to Twitch.");
+            return;
+        }
+
+        string message = txtChatInput.Text.Trim();
+        if (string.IsNullOrWhiteSpace(message))
+            return;
+
+        try
+        {
+            client.SendMessage(cboChannelName.Text, message);
+            Log($"[You]: {message}");
+            txtChatInput.Clear();
+        }
+        catch (Exception ex)
+        {
+            Log($"Error sending message: {ex.Message}");
         }
     }
 
@@ -1607,10 +1636,11 @@ public partial class MainForm : Form
             WalkOnScript.Enabled = false;
         }
 
-        // Command: !askai prompt
-        if (toggleAskAI.Checked && message.StartsWith("!askai ", StringComparison.OrdinalIgnoreCase))
+        // Command: AskAI (configurable trigger)
+        string askAiTrigger = AskAIScript.GetCommandTrigger();
+        if (toggleAskAI.Checked && message.StartsWith(askAiTrigger + " ", StringComparison.OrdinalIgnoreCase))
         {
-            string prompt = message.Substring(6).Trim();
+            string prompt = message.Substring(askAiTrigger.Length).Trim();
             if (!string.IsNullOrEmpty(prompt))
             {
                 string response = await AskAIScript.GetResponse(prompt);

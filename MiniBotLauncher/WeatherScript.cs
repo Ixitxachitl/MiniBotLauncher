@@ -35,7 +35,7 @@ public static class WeatherScript
             if (!string.IsNullOrWhiteSpace(weather))
             {
                 await TryLog($"WeatherScript: Received response: {weather}");
-                return $"Weather for {city}: {weather}";
+                return weather.Trim();
             }
             else
             {

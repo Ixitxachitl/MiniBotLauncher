@@ -13,6 +13,7 @@ public class AskAISettingsForm : Form
     private TextBox txtSystemMessage;
     private TextBox txtServerAddress;
     private TextBox txtServerPort;
+    private TextBox txtCommandTrigger;
     private Button btnConnect;
     private SettingsData settings;
 
@@ -21,7 +22,7 @@ public class AskAISettingsForm : Form
         this.settings = currentSettings;
 
         this.Text = "AI Settings";
-        this.Size = new Size(460, 440);
+        this.Size = new Size(460, 480);
         Theme.ApplyToDialog(this);
 
         int left = 20;
@@ -47,12 +48,16 @@ public class AskAISettingsForm : Form
         lblTokens = Theme.CreateLabel(settings.AskAI_MaxTokens.ToString(), sliderTokens.Right + 10, sliderTokens.Top + 5);
         sliderTokens.ValueChanged += (s, e) => lblTokens.Text = sliderTokens.Value.ToString();
 
-        var lblSystem = Theme.CreateLabel("System Message (optional)", left, 230);
-        txtSystemMessage = Theme.CreateTextBox(left, 255, 400, true, 60);
+        var lblCommand = Theme.CreateLabel("Command Trigger", left, 220);
+        txtCommandTrigger = Theme.CreateTextBox(left, 245, 150);
+        txtCommandTrigger.Text = settings.AskAI_CommandTrigger;
+
+        var lblSystem = Theme.CreateLabel("System Message (optional)", left, 280);
+        txtSystemMessage = Theme.CreateTextBox(left, 305, 400, true, 60);
         txtSystemMessage.Text = settings.AskAI_SystemMessage;
         txtSystemMessage.ScrollBars = ScrollBars.Vertical;
 
-        var btnOK = Theme.CreateButton("OK", this.ClientSize.Width - 170, 340);
+        var btnOK = Theme.CreateButton("OK", this.ClientSize.Width - 170, 390);
         btnOK.DialogResult = DialogResult.OK;
         btnOK.Click += (s, e) =>
         {
@@ -61,10 +66,12 @@ public class AskAISettingsForm : Form
             settings.AskAI_SystemMessage = txtSystemMessage.Text.Trim();
             settings.AskAI_ServerAddress = txtServerAddress.Text.Trim();
             settings.AskAI_ServerPort = int.TryParse(txtServerPort.Text, out int p) ? p : settings.AskAI_ServerPort;
+            settings.AskAI_CommandTrigger = txtCommandTrigger.Text.Trim();
+            AskAIScript.SetCommandTrigger(settings.AskAI_CommandTrigger);
             this.Close();
         };
 
-        var btnCancel = Theme.CreateButton("Cancel", this.ClientSize.Width - 90, 340);
+        var btnCancel = Theme.CreateButton("Cancel", this.ClientSize.Width - 90, 390);
         btnCancel.DialogResult = DialogResult.Cancel;
 
         Controls.AddRange(new Control[]
@@ -73,6 +80,7 @@ public class AskAISettingsForm : Form
             lblPort, txtServerPort, btnConnect,
             lblModel, cmbModel,
             lblToken, sliderTokens, lblTokens,
+            lblCommand, txtCommandTrigger,
             lblSystem, txtSystemMessage,
             btnOK, btnCancel
         });
