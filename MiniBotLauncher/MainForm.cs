@@ -97,34 +97,17 @@ public partial class MainForm : Form
         AudioQueue.DebugLog = async (msg) => { Log(msg); await Task.CompletedTask; };
     }
 
-    public static Bitmap RenderEmojiToBitmap(string emoji, int size = 24)
-    {
-        // Use high DPI for sharpness
-        Bitmap bmp = new Bitmap(size, size);
-        using (Graphics g = Graphics.FromImage(bmp))
-        {
-            g.Clear(Color.Transparent);
-            using (Font font = new Font("Segoe UI Emoji", size - 4, FontStyle.Regular, GraphicsUnit.Pixel))
-            using (StringFormat sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
-            {
-                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
-                g.DrawString(emoji, font, Brushes.White, new RectangleF(0, 0, size, size), sf);
-            }
-        }
-        return bmp;
-    }
-
     private void AddTopRightButtons()
     {   
         Button btnIgnoreList = new Button
         {
-            Image = RenderEmojiToBitmap("📄", 24),
+            Text = "📄",
             Size = new Size(30, 30),
             Location = new Point(this.ClientSize.Width - 160, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
             ForeColor = Color.White,
-            Font = new Font("Segoe UI Emoji", 14, FontStyle.Regular)
+            Font = new Font("Segoe UI Emoji", 11, FontStyle.Regular)
         };
         btnIgnoreList.FlatAppearance.BorderSize = 0;
         btnIgnoreList.Click += (s, e) =>
@@ -146,13 +129,13 @@ public partial class MainForm : Form
 
         btnPinTop = new Button
         {
-            Image = RenderEmojiToBitmap("📌", 24),
+            Text = "📌",
             Size = new Size(30, 30),
             Location = new Point(this.ClientSize.Width - 125, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
             ForeColor = Color.White,
-            Font = new Font("Segoe UI Emoji", 14, FontStyle.Regular)
+            Font = new Font("Segoe UI Emoji", 11, FontStyle.Regular)
         };
         btnPinTop.FlatAppearance.BorderSize = 0;
         btnPinTop.Click += (s, e) =>
@@ -163,26 +146,26 @@ public partial class MainForm : Form
 
         btnMinimizeTray = new Button
         {
-            Image = RenderEmojiToBitmap("_", 24),
+            Text = "_",
             Size = new Size(30, 30),
             Location = new Point(this.ClientSize.Width - 90, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
             ForeColor = Color.White,
-            Font = new Font("Segoe UI Emoji", 14, FontStyle.Regular)
+            Font = new Font("Segoe UI Emoji", 11, FontStyle.Regular)
         };
         btnMinimizeTray.FlatAppearance.BorderSize = 0;
         btnMinimizeTray.Click += (s, e) => { this.Hide(); trayIcon.Visible = true; };
 
         btnInfo = new Button
         {
-            Image = RenderEmojiToBitmap("ℹ️", 24),
+            Text = "ℹ️",
             Size = new Size(30, 30),
             Location = new Point(this.ClientSize.Width - 55, 10),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
             ForeColor = Color.White,
-            Font = new Font("Segoe UI Emoji", 14, FontStyle.Regular)
+            Font = new Font("Segoe UI Emoji", 11, FontStyle.Regular)
         };
         btnInfo.FlatAppearance.BorderSize = 0;
         btnInfo.Click += (s, e) =>
@@ -207,7 +190,7 @@ public partial class MainForm : Form
 
             var label = new Label
             {
-                Text = "v0.2.8 ©2025 Ixitxachitl",
+                Text = $"v{Assembly.GetExecutingAssembly().GetName().Version.ToString(3)} ©2026 Ixitxachitl",
                 AutoSize = true,
                 Location = new Point(20, 20),
                 ForeColor = Color.White,
@@ -986,19 +969,36 @@ public partial class MainForm : Form
             Log($"Error launching OAuth page: {ex.Message}");
         }
 
-        if (oauthListener != null)
+        try
         {
-            oauthListener.Stop();
-            oauthListener.Close();
+            if (oauthListener != null)
+            {
+                try
+                {
+                    oauthListener.Abort(); // Force-close any pending connections
+                }
+                catch { }
+                oauthListener = null;
+                Thread.Sleep(100); // Give the OS time to release the port
+            }
+
+            oauthListener = new HttpListener();
+            oauthListener.Prefixes.Add("http://localhost:8750/");
+            oauthListener.Start();
+            Log("Listening for OAuth callback...");
+
+            // Start first listener
+            oauthListener.BeginGetContext(OnOAuthCallback, null);
         }
-
-        oauthListener = new HttpListener();
-        oauthListener.Prefixes.Add("http://localhost:8750/");
-        oauthListener.Start();
-        Log("Listening for OAuth callback...");
-
-        // Start first listener
-        oauthListener.BeginGetContext(OnOAuthCallback, null);
+        catch (System.Net.HttpListenerException ex)
+        {
+            Log($"Error starting OAuth listener: {ex.Message}");
+            MessageBox.Show(
+                "Port 8750 is already in use. Please close any other instances of MiniBotLauncher and try again.",
+                "OAuth Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        }
     }
 
     private void OnOAuthCallback(IAsyncResult result)
