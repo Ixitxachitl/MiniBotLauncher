@@ -304,7 +304,7 @@ public partial class MainForm : Form
     private void InitializeComponent()
     {
         this.Text = "MiniBotLauncher";
-        this.Size = new Size(515, 660);
+        this.Size = new Size(515, 720);
         this.FormBorderStyle = FormBorderStyle.FixedSingle;
         this.MaximizeBox = false;
         this.BackColor = Color.FromArgb(30, 30, 30);
@@ -474,27 +474,38 @@ public partial class MainForm : Form
         this.Controls.Add(btnAddChannel);
         this.Controls.Add(btnRemoveChannel);
 
-        // Login status label
-        Label lblLoginStatus = CreateLabel("Account");
+        // Login/Logout button (toggles based on state)
+        btnLogin = CreateButton("Login");
+        btnLogin.Top = currentTop;
+        btnLogin.Left = marginLeft;
+        btnLogin.Width = 80;
+        btnLogin.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, btnLogin.Width, btnLogin.Height, 10, 10));
+        btnLogin.Click += btnLoginToggle_Click!;
+
+        // Account status label (inline)
         lblLoggedInAs = new Label
         {
             Text = "Not logged in",
-            Left = inputLeft,
-            Top = currentTop - spacing,
-            Width = 320,
+            Left = btnLogin.Right + 10,
+            Top = currentTop + 8,
+            AutoSize = true,
             ForeColor = Color.Gray,
             BackColor = Color.Transparent,
             TextAlign = ContentAlignment.MiddleLeft
         };
         this.Controls.Add(lblLoggedInAs);
 
-        // Login/Logout button (toggles based on state)
-        btnLogin = CreateButton("Login");
-        btnLogin.Top = currentTop;
-        btnLogin.Left = marginLeft;
-        btnLogin.Width = 100;
-        btnLogin.Region = System.Drawing.Region.FromHrgn(CreateRoundRectRgn(0, 0, btnLogin.Width, btnLogin.Height, 10, 10));
-        btnLogin.Click += btnLoginToggle_Click!;
+        // Connection status icon
+        lblConnectionStatus = new Label
+        {
+            Text = "🔌", 
+            Top = currentTop + 8,
+            Left = 285,
+            AutoSize = true,
+            ForeColor = Color.Red,
+            BackColor = Color.Transparent
+        };
+        this.Controls.Add(lblConnectionStatus);
 
         // Connect button
         btnConnect = CreateButton("Connect");
@@ -502,19 +513,7 @@ public partial class MainForm : Form
         btnConnect.Left = 315;
         btnConnect.Click += btnConnect_Click!;
 
-        lblConnectionStatus = new Label
-        {
-            Text = "🔌", 
-            Top = btnConnect.Top + 8,
-            Left = btnConnect.Left - 32,
-            AutoSize = true,
-            ForeColor = Color.Red,
-            BackColor = Color.Transparent
-        };
-        this.Controls.Add(lblConnectionStatus);
-        lblConnectionStatus.BringToFront();
-
-        currentTop += 55;
+        currentTop += 45;
         Label lblScripts = CreateLabel("Toggle Scripts");
 
         toggleAskAI = CreateToggle("AskAI", marginLeft);
@@ -812,23 +811,38 @@ public partial class MainForm : Form
             Maximum = 100,
             Value = 100,
             TickStyle = TickStyle.None,
-            Width = 410,
+            Width = 350,
+            Height = 30,
             Left = marginLeft,
             Top = currentTop + 40,
-            BackColor = Color.FromArgb(30, 30, 30)
+            BackColor = Color.FromArgb(30, 30, 30),
+            AutoSize = false
         };
+        
+        // Volume percentage label
+        Label lblVolumePercent = new Label
+        {
+            Text = $"{trackVolume.Value}%",
+            AutoSize = true,
+            ForeColor = foreColor,
+            BackColor = Color.Transparent
+        };
+        
         trackVolume.Scroll += (s, e) =>
         {
             AudioQueue.SetVolume(trackVolume.Value / 100f);
+            lblVolumePercent.Text = $"{trackVolume.Value}%";
             SaveSettings();
         };
+        
+        lblVolumePercent.Location = new Point(trackVolume.Right + 5, trackVolume.Top + 5);
 
         // Stop button
         Button btnStopAlerts = new Button
         {
             Text = "⏹️",
             Size = new Size(30, 30),
-            Location = new Point(trackVolume.Right, trackVolume.Top - 5),
+            Location = new Point(trackVolume.Right + 50, trackVolume.Top - 5),
             FlatStyle = FlatStyle.Flat,
             BackColor = Color.Transparent,
             ForeColor = Color.White,
@@ -851,29 +865,15 @@ public partial class MainForm : Form
             btnStopAlerts.Invoke(() => btnStopAlerts.Enabled = isPlaying);
         };
 
-        currentTop = trackVolume.Bottom + 5;
+        currentTop = trackVolume.Bottom;
 
-        txtStatusLog = new TextBox
-        {
-            Left = marginLeft,
-            Top = currentTop,
-            Width = 440,
-            Height = 115,
-            Multiline = true,
-            ReadOnly = true,
-            ScrollBars = ScrollBars.Vertical,
-            BackColor = Color.FromArgb(40, 40, 40),
-            ForeColor = foreColor,
-            BorderStyle = BorderStyle.FixedSingle
-        };
-
-        currentTop = txtStatusLog.Bottom + 5;
-
-        // Chat input field
+        // Chat input field - position at bottom of form first
+        int chatTop = this.ClientSize.Height - 45;
+        
         txtChatInput = new TextBox
         {
             Left = marginLeft,
-            Top = currentTop,
+            Top = chatTop,
             Width = 355,
             Height = 25,
             BackColor = Color.FromArgb(50, 50, 50),
@@ -888,7 +888,7 @@ public partial class MainForm : Form
         {
             Text = "Send",
             Left = txtChatInput.Right + 5,
-            Top = currentTop,
+            Top = chatTop,
             Width = 80,
             Height = 25,
             BackColor = Color.FromArgb(60, 60, 60),
@@ -900,11 +900,25 @@ public partial class MainForm : Form
         btnSendChat.Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, btnSendChat.Width, btnSendChat.Height, 8, 8));
         btnSendChat.Click += BtnSendChat_Click;
 
+        // Log box fills space between slider and chat input
+        txtStatusLog = new TextBox
+        {
+            Left = marginLeft,
+            Top = currentTop,
+            Width = 440,
+            Height = chatTop - currentTop - 10,
+            Multiline = true,
+            ReadOnly = true,
+            ScrollBars = ScrollBars.Vertical,
+            BackColor = Color.FromArgb(40, 40, 40),
+            ForeColor = foreColor,
+            BorderStyle = BorderStyle.FixedSingle
+        };
+
         Controls.AddRange(new Control[]
         {
             lblClientID, txtClientID,
             lblChannel, cboChannelName,
-            lblLoginStatus, lblLoggedInAs,
             btnLogin, btnConnect,
             lblScripts,
             toggleAskAI, toggleWeather,
@@ -912,8 +926,8 @@ public partial class MainForm : Form
             toggleClapThat, toggleMarkovChain,
             toggleSoundAlerts, btnSoundAlertsSettings,
             toggleWalkOn, btnWalkOnSettings,
-            trackVolume, btnStopAlerts,
-            txtStatusLog, lblConnectionStatus,
+            trackVolume, lblVolumePercent, btnStopAlerts,
+            txtStatusLog,
             txtChatInput, btnSendChat
         });
     }
@@ -1499,7 +1513,8 @@ public partial class MainForm : Form
     {
         bool isLoggedIn = !string.IsNullOrWhiteSpace(storedOAuthToken) && !string.IsNullOrWhiteSpace(storedUsername);
         bool basicReady = IsBasicAuthValid();
-        bool loginReady = !string.IsNullOrWhiteSpace(txtClientID.Text) && !isLoggedIn;
+        // Login button enabled when: client ID exists (for login) OR already logged in (for logout)
+        bool loginReady = !string.IsNullOrWhiteSpace(txtClientID.Text) || isLoggedIn;
 
         btnConnect.Enabled = basicReady;
         btnLogin.Enabled = loginReady;
